@@ -1,0 +1,80 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 674ddb3b4569aab4ead539e856adf7c1, type: 3}
+  m_Name: OfficePalette
+  m_EditorClassIdentifier: Assembly-CSharp::LevelSystem.OfficePalette
+  carpet: {fileID: 2100000, guid: 560378b41f2972a458ac3d5700e47237, type: 2}
+  corridorFloor: {fileID: 2100000, guid: 00d9a0322035ad54f889d4bf00f84ca7, type: 2}
+  wall: {fileID: 2100000, guid: 32487a33c44ee0546988587680e1376b, type: 2}
+  baseboard: {fileID: 2100000, guid: f3df19d1d21999840a541de80d1f0544, type: 2}
+  ceiling: {fileID: 2100000, guid: 847e147f1cf552545ab5e29f4f309505, type: 2}
+  lightPanel: {fileID: 2100000, guid: 1e4671d8b8d9e6f49a5a7dca71dff970, type: 2}
+  lightPanelOff: {fileID: 2100000, guid: f2eb5cb84b126204792bc46eeb76b3f5, type: 2}
+  doorLeaf: {fileID: 2100000, guid: c1c67b4ff0038a54ebaaa9c8da4ef865, type: 2}
+  doorFrame: {fileID: 2100000, guid: 69b024acd81d10d4da1e03cd7b6f3e18, type: 2}
+  glass: {fileID: 2100000, guid: d14d271aad931cf49b10ea9264a8a613, type: 2}
+  windowLight: {fileID: 2100000, guid: 8e81241d434b3524da4c41bc62ad9bb6, type: 2}
+  windowNight: {fileID: 2100000, guid: 0fcd1c6fb3ce62b41b1e5b9797517427, type: 2}
+  blinds: {fileID: 2100000, guid: 8e5f61ae4fdeb7645ba414488bf8d771, type: 2}
+  deskTop: {fileID: 2100000, guid: cdf151307ed2e0148b94a3b93764b060, type: 2}
+  deskFrame: {fileID: 2100000, guid: 4b679985d02686146b61bd069cfbc7ed, type: 2}
+  partition: {fileID: 2100000, guid: c7fcd98dfcf19294f8200fc470982b41, type: 2}
+  chairFabric: {fileID: 2100000, guid: e69a1e52c23714e4e8e3f89ade124c71, type: 2}
+  metal: {fileID: 2100000, guid: 2ddf41bbdb899ca41898f6d4c8f17a20, type: 2}
+  darkPlastic: {fileID: 2100000, guid: bdf017b8c612d464da24affe51f3a176, type: 2}
+  whitePlastic: {fileID: 2100000, guid: e5ac09b6451a73a4f94d1154c054b006, type: 2}
+  lightPlastic: {fileID: 2100000, guid: 2026b4d3fed317d4faff8456f5544551, type: 2}
+  wood: {fileID: 2100000, guid: 495c9ce9cf51b674b8a94c7320f52ed2, type: 2}
+  cardboard: {fileID: 2100000, guid: c93bfca7e902bff4a832e9da3462b211, type: 2}
+  coat: {fileID: 2100000, guid: d58972cbd7aca8c4db11ec55fd40f1d9, type: 2}
+  screenDesktop: {fileID: 2100000, guid: 5c5e6f3d83142104d960848bc783fd0c, type: 2}
+  screenEye: {fileID: 2100000, guid: 6ccb8f0f02ab012409651566753315eb, type: 2}
+  screenOff: {fileID: 2100000, guid: afb9f44fb78177e41bd02be222328cc6, type: 2}
+  copierScreen: {fileID: 2100000, guid: c8cadb178045ce34c88e7efa29aee679, type: 2}
+  signPanel: {fileID: 2100000, guid: 9319656cc7a0b904bb31f2089c8cc9e9, type: 2}
+  exitSign: {fileID: 2100000, guid: b24bd8eee721720449e36d64b6ded54f, type: 2}
+  text: {fileID: 2100000, guid: 93ed6522bdb0edc47a61617a373e6d73, type: 2}
+  leaves: {fileID: 2100000, guid: 357c8d8fbec17694b88e02f13dc65889, type: 2}
+  pot: {fileID: 2100000, guid: a58f81f05d98f4d41909710c90627daa, type: 2}
+  soil: {fileID: 2100000, guid: 13652e95801136146bca422ad6660b3e, type: 2}
+  paper: {fileID: 2100000, guid: 1e620d9bd967aee4e99a808be8657c70, type: 2}
+  stickyNote: {fileID: 2100000, guid: e32835922f31f4e4b8b98cda4a69de2a, type: 2}
+  whiteboard: {fileID: 2100000, guid: bbf52e0f1d936a441be547915412046e, type: 2}
+  cork: {fileID: 2100000, guid: 509521cc0ae52914d84c7e6a2ce26a6d, type: 2}
+  clockFace: {fileID: 2100000, guid: 88b04b3e847c6fb4da08d0feaad458eb, type: 2}
+  red: {fileID: 2100000, guid: ae8b03514bf1285498284d0fa91b90d6, type: 2}
+  yellow: {fileID: 2100000, guid: c6ea207fa60de53478a5feca6df1de2f, type: 2}
+  blue: {fileID: 2100000, guid: 2dfb9dae8859a654a8dad9efa3455cd8, type: 2}
+  water: {fileID: 2100000, guid: 41a74a4cdd140004e8e8b83e0d95f0e0, type: 2}
+  figure: {fileID: 2100000, guid: bc93dc48fc1653a4784d73b3a6c50195, type: 2}
+  posters:
+  - {fileID: 2100000, guid: 136764ce46ef8cb49b7b3495b179f938, type: 2}
+  - {fileID: 2100000, guid: 9074b7abf7868cb4da588323049fbee7, type: 2}
+  - {fileID: 2100000, guid: 0154af037e48c974498425e0c1030cac, type: 2}
+  binders:
+  - {fileID: 2100000, guid: f4ffd584ae678834c9f28fd5e059552f, type: 2}
+  - {fileID: 2100000, guid: 06f38f3e6a2b99a4aaa87a0703137759, type: 2}
+  - {fileID: 2100000, guid: 44710ffcf9aad8a42aa32a216c97f5c1, type: 2}
+  - {fileID: 2100000, guid: b37140f940038c24385a1cd48b362038, type: 2}
+  - {fileID: 2100000, guid: df99a6f60f0938a4186da6ce5e30e3c2, type: 2}
+  beige: {fileID: 2100000, guid: e115f3228189ab6408268f66bec56bb4, type: 2}
+  bakelite: {fileID: 2100000, guid: 8b99c813f8d770f459040b71c7ede228, type: 2}
+  brass: {fileID: 2100000, guid: 69523cb145f50244a87137775bcdab6b, type: 2}
+  chrome: {fileID: 2100000, guid: 16e6f2d27d6532a4b920fa4f0408ab34, type: 2}
+  tvScreen: {fileID: 2100000, guid: 5a8c751e0fdd01f49a5ce01517387b17, type: 2}
+  terminalScreen: {fileID: 2100000, guid: ec0877f7b14633e4992dbcfcd4458212, type: 2}
+  grille: {fileID: 2100000, guid: 227b5e3cfa5d23a4da9174f07aad0607, type: 2}
+  vintageGreen: {fileID: 2100000, guid: 832b87a3dc7b7ee4fb979789e03dbfc3, type: 2}
+  tvStatic: {fileID: 2100000, guid: 579160903e91fbc4ba3a369e3a0e039d, type: 2}
+  dialGlow: {fileID: 2100000, guid: 5d7f3d097d44f8a4795e4640a52d1406, type: 2}
+  recLamp: {fileID: 2100000, guid: a5c7e54bf8038aa42940e27cefc28c16, type: 2}
+  vhs: {fileID: 2100000, guid: 75f071b0ed12bfd439ed5a237b151f63, type: 2}
