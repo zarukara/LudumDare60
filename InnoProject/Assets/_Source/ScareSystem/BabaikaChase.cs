@@ -121,13 +121,11 @@ namespace ScareSystem
 
         void OnRoundStarted(int progress, bool hasAnomaly)
         {
-            if (watchedDoor != null) watchedDoor.Opened -= OnDoorOpened;
             watchedDoor = null;
 
             if (State == Phase.Waiting && round.Level == triggerLevel)
             {
                 watchedDoor = Door(round.CurrentStage, "Exit_Door");
-                if (watchedDoor != null) watchedDoor.Opened += OnDoorOpened;
             }
             else if (State == Phase.Chase)
             {
@@ -141,9 +139,23 @@ namespace ScareSystem
             }
         }
 
-        void OnDoorOpened()
+        /// <summary>
+        /// Starts the cutscene once the trigger level's far door is open with the player inside that office; a door
+        /// that opened for a player somewhere else does not count.
+        /// </summary>
+        void WaitForDoor()
         {
-            if (State == Phase.Waiting && round.Level == triggerLevel && babaikaPrefab != null) StartCoroutine(Cutscene());
+            if (watchedDoor == null || !watchedDoor.IsOpen || round.Level != triggerLevel || babaikaPrefab == null || !InOffice()) return;
+            var local = round.CurrentStage.Room.transform.InverseTransformPoint(player.transform.position);
+            Debug.Log($"[BabaikaChase] Cutscene on level {round.Level}, player in the office at x {local.x:F1}, z {local.z:F1}");
+            StartCoroutine(Cutscene());
+        }
+
+        /// <summary>The player stands in the current office, not in a corridor behind its walls.</summary>
+        bool InOffice()
+        {
+            var local = round.CurrentStage.Room.transform.InverseTransformPoint(player.transform.position);
+            return local.x > 0f && local.x < OfficeRoomBuilder.Width && local.z > 0f && local.z < OfficeRoomBuilder.Length;
         }
 
         static AutoDoor Door(Stage stage, string name)
@@ -239,6 +251,7 @@ namespace ScareSystem
 
         void Update()
         {
+            if (State == Phase.Waiting) WaitForDoor();
             if (State != Phase.Chase || babaika == null) return;
             float dt = Time.deltaTime;
             if (dt <= 0f) return;
