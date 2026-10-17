@@ -74,6 +74,13 @@ namespace LevelSystem
             }
         }
 
+        // Lights of the seam cells (StageLayout.SeamCells, the first cells of both paths). Cell i and cell 7 - i face
+        // each other across the stage line, so they match (the seam looks the same after a half turn), and the entry
+        // and exit seams share the indices (cell 0 of the exit is the always-lit door cell). The line itself is dark.
+        static readonly bool[] SeamLights = { true, false, true, false, false, true, false, true };
+
+        static bool Lit(int index) => index < SeamLights.Length ? SeamLights[index] : (index - SeamLights.Length) % 2 == 1;
+
         static CellInfo Get(Dictionary<Vector2Int, CellInfo> cells, Vector2Int c)
         {
             if (!cells.TryGetValue(c, out var info)) cells[c] = info = new CellInfo();
@@ -91,9 +98,9 @@ namespace LevelSystem
 
             bool alongX = (info.Open[1] || info.Open[3]) && !(info.Open[0] || info.Open[2]);
             var panelSize = alongX ? new Vector3(1.2f, 0.02f, 0.6f) : new Vector3(0.6f, 0.02f, 1.2f);
-            // Night: every other light is off (by path index, so both seams match); the cells at the office
-            // doors always shine, because their light also reaches into the office.
-            bool lit = info.Door >= 0 || info.Index % 2 == 0;
+            // Night: about every other light is off. The office door cells always shine (their light reaches into
+            // the office); elsewhere the pattern follows the path index, see Lit.
+            bool lit = info.Door >= 0 || Lit(info.Index);
             Prims.Flat("Panel_Frame", g, new Vector3(0f, Height - 0.008f, 0f), panelSize + new Vector3(0.06f, -0.004f, 0.06f), p.lightPlastic);
             Prims.Flat("Light_Panel", g, new Vector3(0f, Height - 0.018f, 0f), panelSize, lit ? p.lightPanel : p.lightPanelOff);
             // Short range: a light must not reach the parts of a seam that are visible from its line.

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using LocalizationSystem;
 using UnityEngine;
 
 namespace LevelSystem
@@ -163,7 +164,6 @@ namespace LevelSystem
             Prims.Box("Frame_B", g, new Vector3(wx, yc, z + hw - 0.025f), new Vector3(Wall + 0.01f, h, 0.05f), p.whitePlastic, false);
             Prims.Box("Mullion", g, new Vector3(wx - inward * 0.03f, yc, z), new Vector3(0.04f, h - 0.1f, 0.04f), p.whitePlastic, false);
             Prims.Flat("Glass", g, new Vector3(wx - inward * 0.03f, yc, z), new Vector3(0.012f, h - 0.1f, WindowWidth - 0.1f), p.glass);
-            Prims.Box("Sill", g, new Vector3(wx + inward * (Wall / 2f + 0.07f), SillHeight - 0.015f, z), new Vector3(0.18f, 0.03f, WindowWidth + 0.16f), p.whitePlastic, false);
 
             // Outside: a night city far away, and a little moonlight through the blinds.
             Prims.Quad("Night_View", g, new Vector3(wx - inward * (Wall / 2f + 0.2f), yc, z), new Vector2(WindowWidth + 0.5f, h + 0.5f), new Vector3(inward, 0f, 0f), p.windowNight);
@@ -263,17 +263,20 @@ namespace LevelSystem
             float[] distances = { 1.1f, 1.2f, 1.05f, 1.15f, 1.25f, 1.1f, 1.2f, 1.08f, 1.18f, 1.12f, 1.22f };
             Decor.Chair(g, p, "Chair", new Vector3(-0.1f + shifts[index], 0f, distances[index]), 180f + yaws[index]);
 
-            Monitor(g, p, "Monitor", new Vector3(-0.05f, DeskTop, 0.2f), 0f);
+            // Desks with two screens move the main one right so both stay within the desk (clear of the partitions).
+            bool twoScreens = index % 6 == 3;
+            Monitor(g, p, "Monitor", new Vector3(twoScreens ? 0.17f : -0.05f, DeskTop, 0.2f), 0f);
             Prims.Box("Keyboard", g, new Vector3(-0.05f, 0.761f, 0.53f), new Vector3(0.44f, 0.022f, 0.14f), p.darkPlastic, false);
-            Prims.Flat("Mouse_Pad", g, new Vector3(0.33f, 0.7515f, 0.53f), new Vector3(0.22f, 0.003f, 0.18f), p.blue);
-            Prims.Box("Mouse", g, new Vector3(0.33f, 0.765f, 0.53f), new Vector3(0.06f, 0.025f, 0.1f), p.darkPlastic, false);
+            // Mouse on the sitter's right of the keyboard, papers on the other side (Eugen's layout).
+            Prims.Flat("Mouse_Pad", g, new Vector3(-0.43f, 0.7515f, 0.53f), new Vector3(0.22f, 0.003f, 0.18f), p.blue);
+            Prims.Box("Mouse", g, new Vector3(-0.43f, 0.765f, 0.53f), new Vector3(0.06f, 0.025f, 0.1f), p.darkPlastic, false);
             Decor.Bin(g, p, new Vector3(-0.5f, 0f, 0.55f));
 
             switch (index % 6)
             {
                 case 0:
-                    Mug(g, new Vector3(0.48f, DeskTop, 0.3f), p.whitePlastic);
-                    Papers(g, p, new Vector3(-0.5f, DeskTop, 0.42f), 6f);
+                    Mug(g, new Vector3(0.49f, DeskTop, 0.16f), p.whitePlastic);
+                    Papers(g, p, new Vector3(0.42f, DeskTop, 0.5f), 6f);
                     break;
                 case 1:
                     Phone(g, p, new Vector3(0.52f, DeskTop, 0.25f));
@@ -281,10 +284,10 @@ namespace LevelSystem
                     break;
                 case 2:
                     Lamp(g, p, new Vector3(0.56f, DeskTop, 0.16f));
-                    Papers(g, p, new Vector3(-0.47f, DeskTop, 0.5f), -10f);
+                    Papers(g, p, new Vector3(0.44f, DeskTop, 0.5f), -10f);
                     break;
                 case 3:
-                    Monitor(g, p, "Monitor_2", new Vector3(-0.58f, DeskTop, 0.26f), 22f);
+                    Monitor(g, p, "Monitor_2", new Vector3(-0.43f, DeskTop, 0.24f), 18f);
                     Mug(g, new Vector3(0.5f, DeskTop, 0.32f), p.red);
                     break;
                 case 4:
@@ -294,7 +297,7 @@ namespace LevelSystem
                 default:
                     Papers(g, p, new Vector3(0.45f, DeskTop, 0.36f), 4f);
                     Papers(g, p, new Vector3(0.47f, DeskTop + 0.024f, 0.35f), -7f);
-                    Mug(g, new Vector3(-0.55f, DeskTop, 0.45f), p.blue);
+                    Mug(g, new Vector3(-0.56f, DeskTop, 0.31f), p.blue);
                     break;
             }
         }
@@ -369,7 +372,7 @@ namespace LevelSystem
             Corkboard(parent, p);
             var exitSign = Prims.Group("Exit_Sign", parent, new Vector3(ExitX, 2.36f, Length), 180f);
             Prims.Flat("Box", exitSign, new Vector3(0f, 0f, 0.03f), new Vector3(0.44f, 0.16f, 0.05f), p.exitSign);
-            Prims.Text("Text", exitSign, new Vector3(0f, -0.002f, 0.057f), Vector3.forward, "ВЫХОД", 0.11f, Color.white, p.text);
+            Localized(Prims.Text("Text", exitSign, new Vector3(0f, -0.002f, 0.057f), Vector3.forward, "", 0.11f, Color.white, p.text), "sign.exit");
             Prims.PointLight("Glow", exitSign, new Vector3(0f, -0.1f, 0.25f), 1.8f, 0.6f, new Color(0.3f, 1f, 0.45f));
 
             var switchPlate = Prims.Group("Light_Switch", parent, new Vector3(EntranceX - 0.8f, 1.15f, 0f));
@@ -381,6 +384,14 @@ namespace LevelSystem
         }
 
         static Material Poster(OfficePalette p, int i) => p.posters.Length == 0 ? p.paper : p.posters[i % p.posters.Length];
+
+        /// <summary>Gives a Text Mesh its text in the chosen language (now and whenever it is spawned).</summary>
+        public static void Localized(TextMesh text, string key)
+        {
+            var localized = text.gameObject.AddComponent<LocalizedText>();
+            localized.key = key;
+            localized.Apply();
+        }
 
         static Transform Bookcase(Transform parent, OfficePalette p)
         {
@@ -450,12 +461,13 @@ namespace LevelSystem
             Prims.Cylinder("Marker_Red", g, new Vector3(-0.12f, 0.853f, 0.055f), 0.011f, 0.13f, p.red, false, new Vector3(0f, 0f, 90f));
             Prims.Box("Eraser", g, new Vector3(0.28f, 0.86f, 0.05f), new Vector3(0.13f, 0.035f, 0.05f), p.darkPlastic, false);
 
-            // Seen from the room this group faces the viewer, so the viewer's left edge of the board is local +X.
+            // How to play, in the chosen language. Seen from the room this group faces the viewer, so the viewer's
+            // left edge of the board is local +X.
             var notes = Prims.Group("Notes", g);
-            Prims.Text("Title", notes, new Vector3(0f, 1.8f, 0.0235f), Vector3.forward, "ПЛАН НА НЕДЕЛЮ", 0.11f, Marker, p.text);
-            string[] lines = { "1. Квартальный отчёт", "2. Созвон с клиентом в 15:00", "3. Полить фикус!", "4. Не задерживаться после 18:00" };
-            for (int i = 0; i < lines.Length; i++)
-                Prims.Text("Line", notes, new Vector3(1.05f, 1.62f - i * 0.15f, 0.0235f), Vector3.forward, lines[i], 0.08f, Marker, p.text, TextAnchor.MiddleLeft);
+            Localized(Prims.Text("Title", notes, new Vector3(0f, 1.8f, 0.0235f), Vector3.forward, "", 0.11f, Marker, p.text), "board.title");
+            for (int i = 0; i < 5; i++)
+                Localized(Prims.Text("Line", notes, new Vector3(1.08f, 1.64f - i * 0.15f, 0.0235f), Vector3.forward, "", 0.08f, Marker, p.text,
+                    TextAnchor.MiddleLeft), $"board.line{i + 1}");
         }
 
         static void Clock(Transform parent, OfficePalette p)

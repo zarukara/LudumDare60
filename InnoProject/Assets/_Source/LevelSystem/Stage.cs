@@ -13,7 +13,10 @@ namespace LevelSystem
         /// <summary>Exit hall only: walking in here ends the run (local to the stage root).</summary>
         public Bounds FinishZone { get; set; }
 
-        /// <summary>Centre of the exit line, local to the stage root (the entry line is at the origin).</summary>
+        /// <summary>Centre of the entry line, local to the stage root.</summary>
+        public Vector3 EntryLine => StageLayout.EntryLine;
+
+        /// <summary>Centre of the exit line, local to the stage root.</summary>
         public Vector3 ExitLine => Layout.ExitLine;
     }
 }
