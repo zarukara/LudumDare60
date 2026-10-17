@@ -127,7 +127,7 @@ namespace LevelSystem
                 var dir = Quaternion.Euler(0f, a, 0f) * Vector3.forward;
                 Prims.Box("Hook", g, dir * 0.08f + Vector3.up * 1.68f, new Vector3(0.015f, 0.015f, 0.16f), p.darkPlastic, false, new Vector3(-25f, a, 0f));
             }
-            Prims.Box("Coat", g, new Vector3(0.1f, 1.22f, 0.1f), new Vector3(0.42f, 0.86f, 0.13f), p.coat, false, new Vector3(4f, 45f, 3f));
+            Prims.Box("Coat", g, new Vector3(0.1f, 1.286f, 0.1f), new Vector3(0.42f, 0.86f, 0.13f), p.coat, false, new Vector3(4f, 45f, 3f));
             return g;
         }
     }

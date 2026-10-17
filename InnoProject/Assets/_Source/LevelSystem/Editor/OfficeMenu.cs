@@ -33,6 +33,7 @@ namespace LevelSystem.EditorTools
         const string VolumePath = Root + "/OfficeVolume.asset";
         const string LibraryPath = AnomalyFolder + "/AnomalyLibrary.asset";
         public const string ScenePath = "Assets/_Presentation/Scenes/Office.unity";
+        public const string MenuScenePath = "Assets/_Presentation/Scenes/Menu.unity";
 
         [MenuItem("Office/Build All")]
         public static void BuildAll()
@@ -41,6 +42,30 @@ namespace LevelSystem.EditorTools
             var prefab = BuildRoomPrefab(palette);
             var library = BuildAnomalyPrefabs(palette);
             BuildScene(palette, prefab, library, false);
+            BuildMenuScene(false);
+        }
+
+        [MenuItem("Office/Recreate Menu Scene")]
+        public static void RecreateMenuScene() => BuildMenuScene(true);
+
+        /// <summary>Menu scene (language choice, Play) and both scenes in Build Settings, the menu first.</summary>
+        public static void BuildMenuScene(bool overwrite)
+        {
+            if (overwrite || !File.Exists(MenuScenePath))
+            {
+                var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+                var cam = new GameObject("Main Camera") { tag = "MainCamera" }.AddComponent<Camera>();
+                cam.clearFlags = CameraClearFlags.SolidColor;
+                cam.backgroundColor = Color.black;
+                new GameObject("Menu").AddComponent<MenuSystem.MainMenu>();
+                EditorSceneManager.SaveScene(scene, MenuScenePath);
+            }
+
+            var scenes = EditorBuildSettings.scenes.ToList();
+            scenes.RemoveAll(s => s.path == MenuScenePath || s.path == ScenePath);
+            scenes.Insert(0, new EditorBuildSettingsScene(ScenePath, true));
+            scenes.Insert(0, new EditorBuildSettingsScene(MenuScenePath, true));
+            EditorBuildSettings.scenes = scenes.ToArray();
         }
 
         [MenuItem("Office/Rebuild Room Prefab")]
@@ -638,11 +663,14 @@ namespace LevelSystem.EditorTools
             cameraData.antialiasing = AntialiasingMode.SubpixelMorphologicalAntiAliasing;
             head.AddComponent<AudioListener>();
             head.AddComponent<VhsEffect>().material = palette.vhs;
-            head.AddComponent<Flashlight>().clickSource = steps;
+            var flashlight = head.AddComponent<Flashlight>();
+            flashlight.clickSource = steps;
 
             var playerController = player.AddComponent<PlayerController>();
             playerController.head = head.transform;
             playerController.footsteps = steps;
+            ConfigureFootsteps(playerController, palette);
+            AddPlayerBody(playerController, flashlight);
 
             var game = new GameObject("Game");
             var round = game.AddComponent<RoundManager>();
@@ -651,12 +679,115 @@ namespace LevelSystem.EditorTools
             round.roomPrefab = roomPrefab;
             round.anomalies = library;
             game.AddComponent<RoundHud>().round = round;
+            ScareSystem.EditorTools.ScareSetup.AddChase(game, round, playerController, cam);
 
             var volume = new GameObject("Global Volume").AddComponent<Volume>();
             volume.isGlobal = true;
             volume.sharedProfile = BuildVolumeProfile();
 
             EditorSceneManager.SaveScene(scene, ScenePath);
+        }
+
+        // ------------------------------------------------------------------ player body
+
+        const string PlayerFolder = "Assets/_Presentation/Player";
+
+        [MenuItem("Office/Add Body And Babaika Chase To Open Scene")]
+        public static void UpgradeOpenScene()
+        {
+            var controller = Object.FindFirstObjectByType<PlayerController>();
+            var round = Object.FindFirstObjectByType<RoundManager>();
+            if (controller == null || round == null)
+            {
+                Debug.LogWarning("Open the Office scene first (it needs a PlayerController and a RoundManager).");
+                return;
+            }
+            var flashlight = controller.GetComponentInChildren<Flashlight>();
+            AddPlayerBody(controller, flashlight);
+            var view = controller.head != null ? controller.head.GetComponent<Camera>() : Camera.main;
+            ScareSystem.EditorTools.ScareSetup.AddChase(round.gameObject, round, controller, view);
+            EditorSceneManager.MarkSceneDirty(controller.gameObject.scene);
+        }
+
+        /// <summary>
+        /// The first-person body under the player (a little behind the camera) and the torch hand under the camera,
+        /// from the Blockbench models in the Player folder. Replaces earlier ones.
+        /// </summary>
+        public static void AddPlayerBody(PlayerController controller, Flashlight flashlight)
+        {
+            var bodyPrefab = ModelPrefab(PlayerFolder, "PlayerBody", 0.12f, root => root.AddComponent<PlayerBody>());
+            var handPrefab = ModelPrefab(PlayerFolder, "FlashlightHand", 0.35f, null);
+            if (bodyPrefab == null || handPrefab == null) return;
+
+            foreach (var old in controller.GetComponentsInChildren<PlayerBody>(true)) Object.DestroyImmediate(old.gameObject);
+            var body = (GameObject)PrefabUtility.InstantiatePrefab(bodyPrefab, controller.transform);
+            body.transform.localPosition = new Vector3(0f, 0f, -0.2f);
+            body.transform.localRotation = Quaternion.identity;
+            var playerBody = body.GetComponent<PlayerBody>();
+            playerBody.controller = controller;
+            playerBody.flashlight = flashlight;
+
+            if (flashlight == null) return;
+            if (flashlight.viewmodel != null) Object.DestroyImmediate(flashlight.viewmodel.gameObject);
+            var hand = (GameObject)PrefabUtility.InstantiatePrefab(handPrefab, flashlight.transform);
+            hand.transform.localPosition = flashlight.loweredPosition;
+            hand.transform.localRotation = Quaternion.Euler(flashlight.loweredRotation);
+            flashlight.viewmodel = hand.transform;
+            flashlight.walker = controller;
+            EditorUtility.SetDirty(flashlight);
+        }
+
+        /// <summary>
+        /// Prefab for a Blockbench model: an empty root (with optional components) over the FBX, whose palette material
+        /// is remapped to a URP Lit material next to it.
+        /// </summary>
+        static GameObject ModelPrefab(string folder, string name, float smoothness, Action<GameObject> setup)
+        {
+            string fbxPath = $"{folder}/{name}.fbx", prefabPath = $"{folder}/{name}.prefab", matPath = $"{folder}/{name}.mat";
+            var model = AssetDatabase.LoadAssetAtPath<GameObject>(fbxPath);
+            if (model == null)
+            {
+                Debug.LogWarning($"{fbxPath} is missing (export it from Blockbench first).");
+                return null;
+            }
+            var mat = AssetDatabase.LoadAssetAtPath<Material>(matPath);
+            if (mat == null)
+            {
+                mat = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+                AssetDatabase.CreateAsset(mat, matPath);
+            }
+            mat.SetTexture("_BaseMap", AssetDatabase.LoadAssetAtPath<Texture2D>($"{folder}/{name}.png"));
+            mat.SetColor("_BaseColor", Color.white);
+            mat.SetFloat("_Smoothness", smoothness);
+            EditorUtility.SetDirty(mat);
+            var importer = (ModelImporter)AssetImporter.GetAtPath(fbxPath);
+            importer.AddRemap(new AssetImporter.SourceAssetIdentifier(typeof(Material), name + ".png"), mat);
+            importer.SaveAndReimport();
+
+            var root = new GameObject(name);
+            var instance = (GameObject)PrefabUtility.InstantiatePrefab(model, root.transform);
+            instance.name = "Model";
+            setup?.Invoke(root);
+            var prefab = PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
+            Object.DestroyImmediate(root);
+            return prefab;
+        }
+
+        const string FootstepsFolder = "Assets/_Presentation/Sounds/Footsteps";
+
+        /// <summary>Carpet steps in the offices, hard-floor steps elsewhere (samples from the Footsteps folder).</summary>
+        public static void ConfigureFootsteps(PlayerController player, OfficePalette palette)
+        {
+            AudioClip[] Clips(string kind) => AssetDatabase.FindAssets("t:AudioClip " + kind, new[] { FootstepsFolder })
+                .Select(g => AssetDatabase.LoadAssetAtPath<AudioClip>(AssetDatabase.GUIDToAssetPath(g)))
+                .Where(c => c != null)
+                .OrderBy(c => c.name)
+                .ToArray();
+
+            player.softSteps = Clips("carpet");
+            player.hardSteps = Clips("concrete");
+            player.softFloors = new[] { palette.carpet };
+            EditorUtility.SetDirty(player);
         }
 
         static VolumeProfile BuildVolumeProfile()

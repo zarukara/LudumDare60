@@ -22,14 +22,45 @@ namespace PlayerSystem
         public float gravity = -20f;
         public float bobHeight = 0.025f;
         public float stepLength = 0.75f;
+
+        [Header("Footsteps")]
         public AudioSource footsteps;
-        [Range(0f, 1f)] public float footstepVolume = 0.35f;
+        [Range(0f, 1f)] public float footstepVolume = 0.5f;
+        [Tooltip("Steps on soft floors (carpet).")]
+        public AudioClip[] softSteps = new AudioClip[0];
+        [Tooltip("Steps on every other floor.")]
+        public AudioClip[] hardSteps = new AudioClip[0];
+        [Tooltip("Floor materials that sound soft.")]
+        public Material[] softFloors = new Material[0];
+
+        [Header("Control")]
+        [Tooltip("Off: the player cannot walk (cutscenes, scares). Gravity still works.")]
+        public bool canMove = true;
+        [Tooltip("Off: mouse and stick do not turn the view; scripts set it with Pitch and the root's yaw.")]
+        public bool canLook = true;
+        /// <summary>Scripted walking instead of the player's keys (cutscenes, tests): x = strafe, y = forward.</summary>
+        [System.NonSerialized] public Vector2? scriptedMove;
+        [System.NonSerialized] public bool scriptedRun;
+
+        /// <summary>Up/down look angle in degrees (positive looks down).</summary>
+        public float Pitch
+        {
+            get => pitch;
+            set => pitch = Mathf.Clamp(value, -85f, 85f);
+        }
+
+        /// <summary>Horizontal speed over the last frame, m/s.</summary>
+        public float Speed { get; private set; }
+        /// <summary>Distance walked so far; one step every <see cref="stepLength"/>.</summary>
+        public float Travelled => travelled;
+        /// <summary>0 standing .. 1 walking, smoothed (drives head bob and the body's gait).</summary>
+        public float WalkWeight => bobWeight;
 
         CharacterController controller;
-        float pitch, fallSpeed, travelled, bobWeight;
+        float pitch, fallSpeed, travelled, bobWeight, shake, shakeTime;
         Vector3 headRest;
-        AudioClip[] stepClips;
-        int nextClip;
+        AudioClip[] generatedSteps;
+        int lastClip = -1;
 
         void Awake()
         {
@@ -40,7 +71,7 @@ namespace PlayerSystem
                 if (cam != null) head = cam.transform;
             }
             headRest = head != null ? head.localPosition : new Vector3(0f, 1.6f, 0f);
-            stepClips = MakeStepClips();
+            generatedSteps = MakeStepClips();
         }
 
         void OnDisable()
@@ -53,6 +84,23 @@ namespace PlayerSystem
             UpdateCursor();
             Look();
             Move();
+            ApplyShake();
+        }
+
+        /// <summary>Shakes the view (a blow, something very close); stronger calls override weaker ones.</summary>
+        public void Shake(float strength) => shake = Mathf.Max(shake, strength);
+
+        void ApplyShake()
+        {
+            if (head == null || shake <= 0f) return;
+            shakeTime += Time.deltaTime;
+            float a = shake * shake;
+            head.localRotation *= Quaternion.Euler(
+                (Mathf.PerlinNoise(shakeTime * 23f, 0.1f) - 0.5f) * 5f * a,
+                (Mathf.PerlinNoise(0.3f, shakeTime * 23f) - 0.5f) * 5f * a,
+                (Mathf.PerlinNoise(shakeTime * 17f, 0.7f) - 0.5f) * 4f * a);
+            head.localPosition += new Vector3(Mathf.PerlinNoise(shakeTime * 29f, 0.5f) - 0.5f, Mathf.PerlinNoise(0.9f, shakeTime * 29f) - 0.5f, 0f) * (0.03f * a);
+            shake = Mathf.MoveTowards(shake, 0f, Time.deltaTime * 1.8f);
         }
 
         void UpdateCursor()
@@ -74,9 +122,9 @@ namespace PlayerSystem
         void Look()
         {
             var delta = Vector2.zero;
-            if (Cursor.lockState == CursorLockMode.Locked && Mouse.current != null)
+            if (canLook && Cursor.lockState == CursorLockMode.Locked && Mouse.current != null)
                 delta += Mouse.current.delta.ReadValue() * mouseSensitivity;
-            if (Gamepad.current != null)
+            if (canLook && Gamepad.current != null)
                 delta += Gamepad.current.rightStick.ReadValue() * (stickLookSpeed * Time.deltaTime);
 
             pitch = Mathf.Clamp(pitch - delta.y, -85f, 85f);
@@ -103,7 +151,12 @@ namespace PlayerSystem
                 input += pad.leftStick.ReadValue();
                 run |= pad.leftStickButton.isPressed;
             }
-            input = Vector2.ClampMagnitude(input, 1f);
+            if (scriptedMove.HasValue)
+            {
+                input = scriptedMove.Value;
+                run = scriptedRun;
+            }
+            input = canMove ? Vector2.ClampMagnitude(input, 1f) : Vector2.zero;
 
             Vector3 velocity = (transform.right * input.x + transform.forward * input.y) * (run ? runSpeed : walkSpeed);
             fallSpeed = controller.isGrounded ? -2f : fallSpeed + gravity * Time.deltaTime;
@@ -113,6 +166,7 @@ namespace PlayerSystem
             controller.Move(velocity * Time.deltaTime);
             Vector3 moved = transform.position - before;
             moved.y = 0f;
+            Speed = Time.deltaTime > 0f ? moved.magnitude / Time.deltaTime : 0f;
             Bob(moved.magnitude, input.sqrMagnitude > 0.01f && controller.isGrounded);
         }
 
@@ -131,13 +185,28 @@ namespace PlayerSystem
 
         void Step()
         {
-            if (footsteps == null || stepClips == null) return;
-            footsteps.pitch = Random.Range(0.9f, 1.1f);
-            footsteps.PlayOneShot(stepClips[nextClip], footstepVolume);
-            nextClip = (nextClip + 1 + Random.Range(0, stepClips.Length - 1)) % stepClips.Length;
+            if (footsteps == null) return;
+            var clips = ClipsUnderfoot();
+            if (clips == null || clips.Length == 0) clips = generatedSteps;
+            if (clips == null || clips.Length == 0) return;
+            int i = Random.Range(0, clips.Length);
+            if (clips.Length > 1 && i == lastClip) i = (i + 1) % clips.Length; // never the same sample twice in a row
+            lastClip = i;
+            footsteps.pitch = Random.Range(0.92f, 1.08f);
+            footsteps.PlayOneShot(clips[i], footstepVolume);
         }
 
-        /// <summary>Soft thuds on carpet: low-passed noise with a little body, a few variants.</summary>
+        /// <summary>Carpet or hard floor, judged by the material of the floor under the feet.</summary>
+        AudioClip[] ClipsUnderfoot()
+        {
+            if (!Physics.Raycast(transform.position + Vector3.up * 0.3f, Vector3.down, out var hit, 1f, ~0, QueryTriggerInteraction.Ignore))
+                return hardSteps;
+            var floor = hit.collider.GetComponent<Renderer>();
+            bool soft = floor != null && System.Array.IndexOf(softFloors, floor.sharedMaterial) >= 0;
+            return soft && softSteps.Length > 0 ? softSteps : hardSteps;
+        }
+
+        /// <summary>Fallback when no samples are assigned: soft thuds made from low-passed noise.</summary>
         static AudioClip[] MakeStepClips()
         {
             const int rate = 44100;
