@@ -1,3 +1,4 @@
+using PauseSystem;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.Rendering;
@@ -19,8 +20,11 @@ namespace PlayerSystem
         public float range = 16f;
         public float angle = 50f;
         public Color color = new Color(1f, 0.93f, 0.8f);
-        [Tooltip("Plays the click; the player's footstep source if empty.")]
+        [Tooltip("Plays the switch sounds; the player's footstep source if empty.")]
         public AudioSource clickSource;
+        [Tooltip("Switching on and off; a generated click while empty.")]
+        public AudioClip onSound, offSound;
+        [Range(0f, 1f)] public float clickVolume = 0.6f;
 
         [Header("Hand")]
         [Tooltip("The hand holding the torch (child of this camera). The light moves to its child named \"Lens\".")]
@@ -84,6 +88,7 @@ namespace PlayerSystem
 
         void Update()
         {
+            if (GamePause.Paused) return;
             bool pressed = (Keyboard.current != null && Keyboard.current.fKey.wasPressedThisFrame)
                            || (Gamepad.current != null && Gamepad.current.buttonNorth.wasPressedThisFrame);
             if (pressed) Switch(!isOn, true);
@@ -95,8 +100,9 @@ namespace PlayerSystem
         {
             isOn = on;
             if (torch != null) torch.enabled = on;
-            if (click == null) click = MakeClick();
-            if (withSound && clickSource != null) clickSource.PlayOneShot(click, 0.6f);
+            var sound = on ? onSound : offSound;
+            if (sound == null) sound = click != null ? click : click = MakeClick();
+            if (withSound && clickSource != null) clickSource.PlayOneShot(sound, clickVolume);
         }
 
         void PoseHand(float dt)

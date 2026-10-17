@@ -20,11 +20,10 @@ namespace ScareSystem
     /// Escaped: on the escape level the office door slams shut behind the player and stays locked, and she throws
     /// herself at it so the door shakes. Caught: a screamer, then back to the first level with the doors as usual.
     /// Either way it does not happen again in this run. Sounds are slots of <see cref="sounds"/> (see the Sound*
-    /// names).
+    /// names); the game's <see cref="ambience"/> is pushed down from the cutscene until the chase is over.
     /// </summary>
     public class BabaikaChase : MonoBehaviour
     {
-        public const string SoundDescend = "babaika_descend";
         public const string SoundScream = "babaika_scream";
         public const string SoundChaseLoop = "babaika_chase_loop";
         public const string SoundClaws = "babaika_claws";
@@ -49,6 +48,8 @@ namespace ScareSystem
         public Camera view;
         public Babaika babaikaPrefab;
         public SoundBank sounds;
+        [Tooltip("Found in the scene when empty.")]
+        public Ambience ambience;
 
         [Header("Event")]
         public int triggerLevel = 5;
@@ -87,6 +88,7 @@ namespace ScareSystem
             oneShots = gameObject.AddComponent<AudioSource>();
             oneShots.playOnAwake = false;
             oneShots.spatialBlend = 0f;
+            if (ambience == null) ambience = FindFirstObjectByType<Ambience>();
         }
 
         void OnEnable()
@@ -167,7 +169,7 @@ namespace ScareSystem
             player.canMove = false;
             player.canLook = false;
             float normalFov = view.fieldOfView;
-            if (sounds != null) sounds.PlayAt(SoundDescend, hang);
+            if (ambience != null) ambience.Duck(0.25f); // a hush while she comes down
             babaika.GoTo(low, BabaikaGait.Walk, descendSpeed);
 
             float descent = Vector3.Distance(hang, low) / descendSpeed + 0.4f;
@@ -178,8 +180,8 @@ namespace ScareSystem
                 yield return null;
             }
 
-            babaika.Scream(1.3f);
-            if (sounds != null) sounds.PlayAt(SoundScream, babaika.transform.position);
+            var scream = sounds != null ? sounds.PlayAt(SoundScream, babaika.transform.position) : null;
+            babaika.Scream(scream != null ? Mathf.Clamp(scream.length * 0.9f, 1.3f, 3f) : 1.3f); // the jaw stays open for the cry
             player.Shake(0.6f);
             for (float t = 0f; t < 1.1f; t += Time.deltaTime)
             {
@@ -470,6 +472,7 @@ namespace ScareSystem
             foreach (var source in new[] { heartbeat, music, chaseLoop })
                 if (source != null) Destroy(source.gameObject);
             heartbeat = music = chaseLoop = null;
+            if (ambience != null) ambience.Duck(1f);
         }
 
         void Cleanup()
@@ -484,7 +487,7 @@ namespace ScareSystem
 
         void OnGUI()
         {
-            if (State == Phase.Chase && runHint > 0f)
+            if (State == Phase.Chase && runHint > 0f && !PauseSystem.GamePause.Paused)
             {
                 var style = new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold, fontSize = Mathf.RoundToInt(34 * Screen.height / 1080f) };
                 GUI.color = new Color(1f, 0.85f, 0.8f, Mathf.Clamp01(runHint) * (0.75f + 0.25f * Mathf.Sin(Time.time * 9f)));

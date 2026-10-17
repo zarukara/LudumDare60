@@ -4,8 +4,10 @@ using System.Linq;
 using AnomalySystem;
 using AnomalySystem.EditorTools;
 using CameraSystem;
+using PauseSystem;
 using PlayerSystem;
 using RoundSystem;
+using SoundSystem;
 using UISystem;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -163,15 +165,20 @@ namespace LevelSystem.EditorTools
             palette.dialGlow = Mat("Old_Dial_Glow", "#F2B45A", 0.5f, emission: new Color(1f, 0.62f, 0.22f) * 1.4f);
             palette.recLamp = Mat("Old_Rec_Lamp", "#FF2A2A", 0.5f, emission: new Color(1f, 0.08f, 0.06f) * 2.5f);
             palette.vhs = LoadOrCreate("VHS", Shader.Find("Office/VHS"));
-            // Light touch: the tape look must not hide what is on the desks.
-            palette.vhs.SetFloat("_Noise", 0.03f);
+            // Light touch: the tape look must not hide what is on the desks, and the faults must not twitch.
+            palette.vhs.SetFloat("_Noise", 0.02f);
             palette.vhs.SetFloat("_Bleed", 1.2f);
-            palette.vhs.SetFloat("_Jitter", 0.0004f);
+            palette.vhs.SetFloat("_Jitter", 0.0003f);
+            palette.vhs.SetFloat("_Tracking", 0.2f);
+            palette.vhs.SetFloat("_HeadSwitch", 0.35f);
+            palette.vhs.SetFloat("_Dropouts", 0.06f);
             palette.vhs.SetFloat("_Scanlines", 0.08f);
             palette.vhs.SetFloat("_Saturation", 0.85f);
             palette.vhs.SetColor("_Tint", new Color(0.96f, 1f, 0.94f));
             palette.vhs.SetFloat("_Vignette", 0.7f);
             EditorUtility.SetDirty(palette.vhs);
+            palette.doorOpen = AssetDatabase.LoadAssetAtPath<AudioClip>(DoorSounds + "/DoorOpen.wav");
+            palette.doorClose = AssetDatabase.LoadAssetAtPath<AudioClip>(DoorSounds + "/DoorClosed.wav");
 
             EditorUtility.SetDirty(palette);
             AssetDatabase.SaveAssets();
@@ -665,6 +672,7 @@ namespace LevelSystem.EditorTools
             head.AddComponent<VhsEffect>().material = palette.vhs;
             var flashlight = head.AddComponent<Flashlight>();
             flashlight.clickSource = steps;
+            ConfigureFlashlight(flashlight);
 
             var playerController = player.AddComponent<PlayerController>();
             playerController.head = head.transform;
@@ -679,6 +687,9 @@ namespace LevelSystem.EditorTools
             round.roomPrefab = roomPrefab;
             round.anomalies = library;
             game.AddComponent<RoundHud>().round = round;
+            game.AddComponent<GamePause>();
+            game.AddComponent<PauseMenu>();
+            AddAmbience(round);
             ScareSystem.EditorTools.ScareSetup.AddChase(game, round, playerController, cam);
 
             var volume = new GameObject("Global Volume").AddComponent<Volume>();
@@ -692,7 +703,11 @@ namespace LevelSystem.EditorTools
 
         const string PlayerFolder = "Assets/_Presentation/Player";
 
-        [MenuItem("Office/Add Body And Babaika Chase To Open Scene")]
+        /// <summary>
+        /// Brings an existing Office scene up to date: first-person body, torch sounds, Babaika chase, pause with its
+        /// settings screen, ambience.
+        /// </summary>
+        [MenuItem("Office/Upgrade Open Scene")]
         public static void UpgradeOpenScene()
         {
             var controller = Object.FindFirstObjectByType<PlayerController>();
@@ -704,9 +719,30 @@ namespace LevelSystem.EditorTools
             }
             var flashlight = controller.GetComponentInChildren<Flashlight>();
             AddPlayerBody(controller, flashlight);
+            ConfigureFlashlight(flashlight);
+            if (round.GetComponent<GamePause>() == null) round.gameObject.AddComponent<GamePause>();
+            if (round.GetComponent<PauseMenu>() == null) round.gameObject.AddComponent<PauseMenu>();
+            AddAmbience(round);
             var view = controller.head != null ? controller.head.GetComponent<Camera>() : Camera.main;
             ScareSystem.EditorTools.ScareSetup.AddChase(round.gameObject, round, controller, view);
             EditorSceneManager.MarkSceneDirty(controller.gameObject.scene);
+        }
+
+        const string AmbienceFolder = "Assets/_Presentation/Sounds/Ambience";
+
+        /// <summary>The level-driven ambience on the round's object, its stages being the loops in the Ambience folder by name.</summary>
+        public static Ambience AddAmbience(RoundManager round)
+        {
+            var ambience = round.GetComponent<Ambience>();
+            if (ambience == null) ambience = round.gameObject.AddComponent<Ambience>();
+            ambience.round = round;
+            ambience.stages = AssetDatabase.FindAssets("t:AudioClip", new[] { AmbienceFolder })
+                .Select(guid => AssetDatabase.GUIDToAssetPath(guid))
+                .OrderBy(path => path, StringComparer.Ordinal)
+                .Select(path => AssetDatabase.LoadAssetAtPath<AudioClip>(path))
+                .ToArray();
+            EditorUtility.SetDirty(ambience);
+            return ambience;
         }
 
         /// <summary>
@@ -774,6 +810,17 @@ namespace LevelSystem.EditorTools
         }
 
         const string FootstepsFolder = "Assets/_Presentation/Sounds/Footsteps";
+        const string DoorSounds = "Assets/_Presentation/Sounds/Doors";
+        const string FlashlightSounds = "Assets/_Presentation/Sounds/Flashlight";
+
+        /// <summary>The torch's switch sounds from the Flashlight sounds folder.</summary>
+        public static void ConfigureFlashlight(Flashlight flashlight)
+        {
+            if (flashlight == null) return;
+            flashlight.onSound = AssetDatabase.LoadAssetAtPath<AudioClip>(FlashlightSounds + "/FonarikON.wav");
+            flashlight.offSound = AssetDatabase.LoadAssetAtPath<AudioClip>(FlashlightSounds + "/FonarikOFF.wav");
+            EditorUtility.SetDirty(flashlight);
+        }
 
         /// <summary>Carpet steps in the offices, hard-floor steps elsewhere (samples from the Footsteps folder).</summary>
         public static void ConfigureFootsteps(PlayerController player, OfficePalette palette)
@@ -784,8 +831,8 @@ namespace LevelSystem.EditorTools
                 .OrderBy(c => c.name)
                 .ToArray();
 
-            player.softSteps = Clips("carpet");
-            player.hardSteps = Clips("concrete");
+            player.softSteps = Clips("Kover");
+            player.hardSteps = Clips("Plitka");
             player.softFloors = new[] { palette.carpet };
             EditorUtility.SetDirty(player);
         }

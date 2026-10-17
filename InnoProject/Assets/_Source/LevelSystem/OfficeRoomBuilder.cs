@@ -148,6 +148,8 @@ namespace LevelSystem
             var door = hinge.gameObject.AddComponent<AutoDoor>();
             door.leafWidth = leafWidth;
             door.leafCollider = leaf.GetComponent<Collider>();
+            door.openSound = p.doorOpen;
+            door.closeSound = p.doorClose;
             return hinge;
         }
 

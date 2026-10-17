@@ -20,16 +20,15 @@ namespace LocalizationSystem
 
         static readonly Dictionary<string, (string ru, string en)> Table = new Dictionary<string, (string, string)>
         {
-            ["menu.play"] = ("Играть", "Play"),
-            ["menu.quit"] = ("Выход", "Quit"),
-            ["menu.language"] = ("Язык", "Language"),
+            ["menu.play"] = ("ИГРАТЬ", "PLAY"),
+            ["menu.language"] = ("ЯЗЫК", "LANGUAGE"),
 
             ["board.title"] = ("КАК ВЫБРАТЬСЯ", "HOW TO GET OUT"),
             ["board.line1"] = ("1. Внимательно осмотри офис.", "1. Look around the office."),
             ["board.line2"] = ("2. Всё как обычно — иди к дальней двери.", "2. All normal? Go on to the far door."),
             ["board.line3"] = ("3. Видишь старую технику — иди назад.", "3. Old tech that does not belong? Turn back."),
             ["board.line4"] = ("4. Ошибёшься — начнёшь сначала.", "4. One mistake and you start over."),
-            ["board.line5"] = ("5. Восемь офисов подряд — и ты свободен.", "5. Eight offices in a row and you are free."),
+            ["board.line5"] = ("5. Аномалии подсвечены тёплым светом.", "5. Anomalies are lit by a warm light."),
 
             ["sign.round"] = ("РАУНД {0}", "ROUND {0}"),
             ["sign.exit"] = ("ВЫХОД", "EXIT"),
@@ -42,6 +41,11 @@ namespace LocalizationSystem
             ["hud.again"] = ("R — пройти заново      M — в меню", "R — play again      M — menu"),
             ["hud.debug"] = ("Прогресс {0}/{1} · аномалия: {2}", "Progress {0}/{1} · anomaly: {2}"),
             ["hud.none"] = ("нет", "none"),
+
+            ["pause.title"] = ("НАСТРОЙКИ", "SETTINGS"),
+            ["pause.sensitivity"] = ("ЧУВСТВИТЕЛЬНОСТЬ МЫШИ", "MOUSE SENSITIVITY"),
+            ["pause.volume"] = ("ГРОМКОСТЬ", "VOLUME"),
+            ["pause.resume"] = ("Tab ► ПРОДОЛЖИТЬ", "Tab ► RESUME"),
         };
 
         static Language? current;

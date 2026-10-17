@@ -1,140 +1,121 @@
 using LocalizationSystem;
+using UISystem;
 using UnityEngine;
 using UnityEngine.EventSystems;
-using UnityEngine.InputSystem.UI;
+using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 namespace MenuSystem
 {
     /// <summary>
-    /// Start menu, built in code on start: title, Play, the language (Русский / English, remembered between runs)
-    /// and Quit. Play loads <see cref="gameScene"/>.
+    /// Start menu in the look of a VCR's on-screen display on a black screen, built in code on start: the title,
+    /// Play and the language (Русский / English, remembered between runs), with "STOP ■" and the tape's date in the
+    /// corners. A blinking ► marks the chosen line. The mouse picks lines by hovering and clicks them; arrows or a
+    /// stick and Enter work too, left and right switch the language. Play loads <see cref="gameScene"/>.
     /// </summary>
     public class MainMenu : MonoBehaviour
     {
         public string gameScene = "Office";
         [Tooltip("The game's name, the same in every language.")]
-        public string title = "The INNO";
+        public string title = "The INNOffice";
+        [Tooltip("The tape's date in the corner, as in the game.")]
+        public string date = "17.10.1996";
 
-        static readonly Color Background = new Color(0.025f, 0.03f, 0.035f);
-        static readonly Color ButtonColor = new Color(0.13f, 0.14f, 0.15f);
-        static readonly Color Selected = new Color(0.78f, 0.8f, 0.74f);
+        const float Left = -360f;
+        const int ItemSize = 52;
 
-        Font font;
-        Button russian, english;
+        Button play, language;
+        Text playLabel, languageLabel, languageValue, cursor;
 
         void Start()
         {
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
-            font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            if (EventSystem.current == null)
-                new GameObject("EventSystem", typeof(EventSystem), typeof(InputSystemUIInputModule));
+            VhsUi.EnsureEventSystem();
             Build();
             Localization.Changed += Refresh;
             Refresh();
+            EventSystem.current.SetSelectedGameObject(play.gameObject);
         }
 
         void OnDestroy() => Localization.Changed -= Refresh;
 
+        void Update()
+        {
+            var events = EventSystem.current;
+            if (events == null) return;
+            foreach (var item in new[] { play, language })
+                if (VhsUi.Hovered((RectTransform)item.transform)) events.SetSelectedGameObject(item.gameObject);
+            var selected = events.currentSelectedGameObject;
+            if (selected == null && VhsUi.NavigationPressed())
+                events.SetSelectedGameObject(selected = play.gameObject); // a click on empty space must not lose the keys
+            if (selected == language.gameObject && SidePressed()) ToggleLanguage();
+
+            bool onLanguage = selected == language.gameObject;
+            cursor.enabled = selected != null && VhsUi.BlinkOn;
+            cursor.rectTransform.anchoredPosition = new Vector2(cursor.rectTransform.anchoredPosition.x, (onLanguage ? languageLabel : playLabel).rectTransform.anchoredPosition.y);
+            playLabel.color = selected == play.gameObject ? VhsUi.Bright : VhsUi.Faded;
+            languageLabel.color = languageValue.color = onLanguage ? VhsUi.Bright : VhsUi.Faded;
+        }
+
+        static bool SidePressed()
+        {
+            var keyboard = Keyboard.current;
+            var pad = Gamepad.current;
+            return (keyboard != null && (keyboard.leftArrowKey.wasPressedThisFrame || keyboard.rightArrowKey.wasPressedThisFrame
+                                         || keyboard.aKey.wasPressedThisFrame || keyboard.dKey.wasPressedThisFrame))
+                   || (pad != null && (pad.dpad.left.wasPressedThisFrame || pad.dpad.right.wasPressedThisFrame
+                                       || pad.leftStick.left.wasPressedThisFrame || pad.leftStick.right.wasPressedThisFrame));
+        }
+
+        static void ToggleLanguage() =>
+            Localization.Current = Localization.Current == Language.Russian ? Language.English : Language.Russian;
+
+        void Refresh() => languageValue.text = Localization.Current == Language.Russian ? "◄ РУССКИЙ ►" : "◄ ENGLISH ►";
+
+        // ------------------------------------------------------------------ layout
+
         void Build()
         {
-            var canvasObject = new GameObject("Menu_Canvas", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
-            canvasObject.transform.SetParent(transform, false);
-            canvasObject.GetComponent<Canvas>().renderMode = RenderMode.ScreenSpaceOverlay;
-            var scaler = canvasObject.GetComponent<CanvasScaler>();
-            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(1920f, 1080f);
-            scaler.matchWidthOrHeight = 1f;
-            var root = canvasObject.transform;
+            var canvas = VhsUi.NewCanvas("Menu_Canvas", transform, 0);
+            VhsUi.Fill(canvas, "Black", Color.black);
+            Corner(canvas, "STOP ■", new Vector2(0f, 1f), new Vector2(80f, -60f), TextAnchor.UpperLeft);
+            Corner(canvas, $"{date}    SP 0:00:00", new Vector2(0f, 0f), new Vector2(80f, 60f), TextAnchor.LowerLeft);
 
-            var background = new GameObject("Background", typeof(Image)).GetComponent<Image>();
-            background.transform.SetParent(root, false);
-            Stretch(background.rectTransform);
-            background.color = Background;
+            VhsUi.Label(canvas, null, title, 132, TextAnchor.MiddleCenter, new Vector2(0f, 230f), VhsUi.Bright);
+            play = Item(canvas, "menu.play", 10f, out playLabel, () => SceneManager.LoadScene(gameScene));
+            language = Item(canvas, "menu.language", -90f, out languageLabel, ToggleLanguage);
+            languageValue = VhsUi.Label(canvas, null, "", ItemSize, TextAnchor.MiddleLeft, new Vector2(Left + 340f, -90f), VhsUi.Faded);
+            cursor = VhsUi.Label(canvas, null, "►", ItemSize, TextAnchor.MiddleRight, new Vector2(Left - 24f, 10f), VhsUi.Accent);
 
-            Label(root, null, 132, FontStyle.Bold, new Vector2(0f, 260f), new Vector2(1400f, 170f), new Color(0.9f, 0.92f, 0.88f), title);
-
-            Button(root, "menu.play", new Vector2(0f, 40f), new Vector2(420f, 90f), 44, () => SceneManager.LoadScene(gameScene));
-            Label(root, "menu.language", 28, FontStyle.Normal, new Vector2(0f, -70f), new Vector2(600f, 50f), new Color(0.6f, 0.63f, 0.6f));
-            russian = Button(root, null, new Vector2(-110f, -140f), new Vector2(200f, 70f), 32, () => Localization.Current = Language.Russian, "Русский");
-            english = Button(root, null, new Vector2(110f, -140f), new Vector2(200f, 70f), 32, () => Localization.Current = Language.English, "English");
-            Button(root, "menu.quit", new Vector2(0f, -260f), new Vector2(420f, 80f), 36, Quit);
+            play.navigation = new Navigation { mode = Navigation.Mode.Explicit, selectOnUp = language, selectOnDown = language };
+            language.navigation = new Navigation { mode = Navigation.Mode.Explicit, selectOnUp = play, selectOnDown = play };
         }
 
-        /// <summary>Marks the chosen language.</summary>
-        void Refresh()
+        /// <summary>OSD text in a corner of the screen, like on the tape in the game.</summary>
+        static void Corner(RectTransform canvas, string text, Vector2 corner, Vector2 offset, TextAnchor alignment)
         {
-            Mark(russian, Localization.Current == Language.Russian);
-            Mark(english, Localization.Current == Language.English);
+            var label = VhsUi.Label(canvas, null, text, 46, alignment, offset, VhsUi.Bright);
+            label.rectTransform.anchorMin = label.rectTransform.anchorMax = corner;
+            label.rectTransform.anchoredPosition = offset;
         }
 
-        static void Mark(Button button, bool chosen)
+        /// <summary>A menu line: the text, and an invisible button over the whole line for the mouse and the keys.</summary>
+        static Button Item(RectTransform canvas, string key, float y, out Text label, UnityEngine.Events.UnityAction onClick)
         {
-            if (button == null) return;
-            button.GetComponent<Image>().color = chosen ? Selected : ButtonColor;
-            button.GetComponentInChildren<Text>().color = chosen ? Background : Color.white;
-        }
-
-        static void Quit()
-        {
-#if UNITY_EDITOR
-            UnityEditor.EditorApplication.isPlaying = false;
-#else
-            Application.Quit();
-#endif
-        }
-
-        Text Label(Transform parent, string key, int size, FontStyle style, Vector2 position, Vector2 box, Color color, string fixedText = null)
-        {
-            var text = new GameObject(key ?? fixedText, typeof(Text)).GetComponent<Text>();
-            text.transform.SetParent(parent, false);
-            text.rectTransform.anchoredPosition = position;
-            text.rectTransform.sizeDelta = box;
-            text.font = font;
-            text.fontSize = size;
-            text.fontStyle = style;
-            text.alignment = TextAnchor.MiddleCenter;
-            text.color = color;
-            text.raycastTarget = false;
-            if (key != null)
-            {
-                var localized = text.gameObject.AddComponent<LocalizedText>();
-                localized.key = key;
-                localized.Apply(); // OnEnable already ran without a key
-            }
-            else
-            {
-                text.text = fixedText;
-            }
-            return text;
-        }
-
-        Button Button(Transform parent, string key, Vector2 position, Vector2 box, int size, UnityEngine.Events.UnityAction onClick, string fixedText = null)
-        {
-            var image = new GameObject("Button_" + (key ?? fixedText), typeof(Image), typeof(Button)).GetComponent<Image>();
-            image.transform.SetParent(parent, false);
-            image.rectTransform.anchoredPosition = position;
-            image.rectTransform.sizeDelta = box;
-            image.color = ButtonColor;
-            var button = image.GetComponent<Button>();
-            var colors = button.colors;
-            colors.highlightedColor = new Color(1.25f, 1.25f, 1.25f);
-            colors.pressedColor = new Color(0.8f, 0.8f, 0.8f);
-            button.colors = colors;
+            var area = new GameObject("Item_" + key, typeof(RectTransform), typeof(Image), typeof(Button)).GetComponent<RectTransform>();
+            area.SetParent(canvas, false);
+            area.anchorMin = area.anchorMax = new Vector2(0.5f, 0.5f);
+            area.pivot = new Vector2(0f, 0.5f);
+            area.anchoredPosition = new Vector2(Left - 80f, y);
+            area.sizeDelta = new Vector2(880f, 90f);
+            area.GetComponent<Image>().color = Color.clear;
+            var button = area.GetComponent<Button>();
+            button.transition = Selectable.Transition.None;
             button.onClick.AddListener(onClick);
-            var label = Label(image.transform, key, size, FontStyle.Normal, Vector2.zero, box, Color.white, fixedText);
-            Stretch(label.rectTransform);
+            label = VhsUi.Label(canvas, key, null, ItemSize, TextAnchor.MiddleLeft, new Vector2(Left, y), VhsUi.Faded);
             return button;
-        }
-
-        static void Stretch(RectTransform rect)
-        {
-            rect.anchorMin = Vector2.zero;
-            rect.anchorMax = Vector2.one;
-            rect.offsetMin = Vector2.zero;
-            rect.offsetMax = Vector2.zero;
         }
     }
 }

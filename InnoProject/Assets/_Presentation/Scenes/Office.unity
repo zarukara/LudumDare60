@@ -131,6 +131,9 @@ GameObject:
   - component: {fileID: 64465225}
   - component: {fileID: 64465224}
   - component: {fileID: 64465227}
+  - component: {fileID: 64465228}
+  - component: {fileID: 64465229}
+  - component: {fileID: 64465230}
   m_Layer: 0
   m_Name: Game
   m_TagString: Untagged
@@ -215,6 +218,7 @@ MonoBehaviour:
   view: {fileID: 1940549239}
   babaikaPrefab: {fileID: 2017144196616906378, guid: 209809b6ad1056c4a9e6cf14027f77fe, type: 3}
   sounds: {fileID: 11400000, guid: 053f4f8458b5f4c4cad7b353e37e4dbe, type: 2}
+  ambience: {fileID: 64465229}
   triggerLevel: 5
   escapeLevel: 1
   zoomFov: 30
@@ -224,6 +228,52 @@ MonoBehaviour:
   maxSpeed: 6.5
   catchGap: 0.45
   headHeight: 1.45
+--- !u!114 &64465228
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 64465223}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe10592a0c05acc4a8013af63488fba0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PauseSystem.GamePause
+--- !u!114 &64465229
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 64465223}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8f9fc328b9b89f44894d75b3e97d41ae, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SoundSystem.Ambience
+  round: {fileID: 64465225}
+  stages:
+  - {fileID: 8300000, guid: 6abfd5903f5ebae449dd508cc7a37d14, type: 3}
+  - {fileID: 8300000, guid: 895259714337ec14f9247912da37b4a7, type: 3}
+  - {fileID: 8300000, guid: 7d0b9d7bcc53a0b4bb0a7c4b71fde950, type: 3}
+  - {fileID: 8300000, guid: c8bb2e1834645f145a0f47097977e327, type: 3}
+  stageFromLevel: 030000000500000007000000
+  volume: 0.6
+  fadeOut: 2.5
+  fadeIn: 4
+--- !u!114 &64465230
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 64465223}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 38ceaeacf65ed384cb6c00837eda6f16, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PauseSystem.PauseMenu
 --- !u!1001 &240252689
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -345,17 +395,15 @@ MonoBehaviour:
   footsteps: {fileID: 836928933}
   footstepVolume: 0.35
   softSteps:
-  - {fileID: 8300000, guid: b4daa8eef7d3e854c8fd438cd77ca71a, type: 3}
-  - {fileID: 8300000, guid: ee916dd92e6bd3d419b7295c977dc0bf, type: 3}
-  - {fileID: 8300000, guid: 72be94b3ca2295940942bb1d2b62cff1, type: 3}
-  - {fileID: 8300000, guid: 9336a9261a82f3244b77da9397d42427, type: 3}
-  - {fileID: 8300000, guid: f8c564dd6b3712f4d9cafa3826ac9ef3, type: 3}
+  - {fileID: 8300000, guid: e772d959475706c4c8dc3a7184620889, type: 3}
+  - {fileID: 8300000, guid: 86932fe9260506e4c9e5a4d4a72e2f54, type: 3}
+  - {fileID: 8300000, guid: 362f4264a70905b48a2ef6533db9706c, type: 3}
+  - {fileID: 8300000, guid: ed739f2957c76bb4193fee8f9e7d3d94, type: 3}
   hardSteps:
-  - {fileID: 8300000, guid: e2b2cb1fea7799740a646e3d6bda12c7, type: 3}
-  - {fileID: 8300000, guid: 16f651fc5eeb5d64e9d64d4e0561d5ba, type: 3}
-  - {fileID: 8300000, guid: 858a2ca53161df74884dce0114f5fce7, type: 3}
-  - {fileID: 8300000, guid: bcec7a35faf040c45980ffa3a89a5abc, type: 3}
-  - {fileID: 8300000, guid: 8892602e44d28674da024eff6f976a5a, type: 3}
+  - {fileID: 8300000, guid: 2de54332f31d1ba49a4ed815c16ba0c5, type: 3}
+  - {fileID: 8300000, guid: 81ac46a96c10e9846b6be6dd0405ade7, type: 3}
+  - {fileID: 8300000, guid: 7dd71d3638d831945a356152b3719869, type: 3}
+  - {fileID: 8300000, guid: 86a184a0564825e419e1838f4138f97b, type: 3}
   softFloors:
   - {fileID: 2100000, guid: 560378b41f2972a458ac3d5700e47237, type: 2}
   canMove: 1
@@ -707,6 +755,9 @@ MonoBehaviour:
   angle: 50
   color: {r: 1, g: 0.93, b: 0.8, a: 1}
   clickSource: {fileID: 836928933}
+  onSound: {fileID: 8300000, guid: f21bd2dc05dde9e4e81f2bc57d78fd71, type: 3}
+  offSound: {fileID: 8300000, guid: cd002b3889dfea34a85ba468cb1f9bda, type: 3}
+  clickVolume: 0.6
   viewmodel: {fileID: 240252690}
   raisedPosition: {x: 0.15, y: -0.165, z: 0.33}
   raisedRotation: {x: 4, y: -7, z: 0}

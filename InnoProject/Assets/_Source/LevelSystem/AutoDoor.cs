@@ -7,6 +7,8 @@ namespace LevelSystem
     /// Office door that swings open away from the player when they come near and closes once they are gone.
     /// Sits on the hinge: the leaf runs along local +X from here, the wall's normal is local Z.
     /// Scripts can slam it shut and lock it (<see cref="Slam"/>) and make the closed leaf rattle (<see cref="Knock"/>).
+    /// Sounds: <see cref="openSound"/> as it starts to open, <see cref="closeSound"/> timed so its latch hits as the
+    /// leaf meets the frame (a slam brings its own sound and skips it).
     /// </summary>
     public class AutoDoor : MonoBehaviour
     {
@@ -26,6 +28,13 @@ namespace LevelSystem
         [Tooltip("Degrees a blow of strength 1 bends the shut leaf away from the one who hits it, against the latch.")]
         public float knockPush = 3.5f;
 
+        [Header("Sounds")]
+        public AudioClip openSound;
+        public AudioClip closeSound;
+        [Range(0f, 1f)] public float soundVolume = 0.7f;
+        [Tooltip("Seconds from the start of the close sound to its latch hit; it starts that long before the leaf shuts.")]
+        public float closeSoundLead = 0.18f;
+
         /// <summary>Fired when the door starts to open for the player.</summary>
         public event Action Opened;
 
@@ -33,9 +42,21 @@ namespace LevelSystem
 
         Transform viewer;
         Quaternion closedRotation;
+        AudioSource voice;
         float angle, targetAngle, slamSpeed, rattle, rattleTime, push, pushSign = 1f;
+        bool closeSounded = true;
 
-        void Awake() => closedRotation = transform.localRotation;
+        void Awake()
+        {
+            closedRotation = transform.localRotation;
+            if (openSound == null && closeSound == null) return;
+            voice = gameObject.AddComponent<AudioSource>();
+            voice.playOnAwake = false;
+            voice.spatialBlend = 1f;
+            voice.minDistance = 1.5f;
+            voice.maxDistance = 20f;
+            voice.dopplerLevel = 0f;
+        }
 
         void Update()
         {
@@ -53,6 +74,8 @@ namespace LevelSystem
             if (targetAngle == 0f && distance < openDistance && !locked)
             {
                 targetAngle = local.z > 0f ? openAngle : -openAngle; // positive yaw swings the leaf towards -Z
+                Play(openSound);
+                closeSounded = false;
                 Opened?.Invoke();
             }
             else if (targetAngle != 0f && distance > closeDistance)
@@ -60,7 +83,13 @@ namespace LevelSystem
                 targetAngle = 0f;
             }
 
-            angle = Mathf.MoveTowards(angle, targetAngle, (slamSpeed > 0f ? slamSpeed : degreesPerSecond) * Time.deltaTime);
+            float speed = slamSpeed > 0f ? slamSpeed : degreesPerSecond;
+            if (targetAngle == 0f && !closeSounded && Mathf.Abs(angle) <= speed * closeSoundLead)
+            {
+                closeSounded = true;
+                if (slamSpeed <= 0f) Play(closeSound);
+            }
+            angle = Mathf.MoveTowards(angle, targetAngle, speed * Time.deltaTime);
             if (Mathf.Approximately(angle, targetAngle)) slamSpeed = 0f;
 
             rattle = Mathf.MoveTowards(rattle, 0f, Time.deltaTime * 2.2f);
@@ -82,6 +111,13 @@ namespace LevelSystem
         }
 
         public void Unlock() => locked = false;
+
+        void Play(AudioClip clip)
+        {
+            if (voice == null || clip == null) return;
+            voice.pitch = UnityEngine.Random.Range(0.95f, 1.05f);
+            voice.PlayOneShot(clip, soundVolume);
+        }
 
         /// <summary>Rattles the leaf as from a blow (about 0..1.5).</summary>
         public void Knock(float strength) => rattle = Mathf.Max(rattle, strength);

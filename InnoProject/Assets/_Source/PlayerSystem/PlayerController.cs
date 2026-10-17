@@ -1,3 +1,4 @@
+using PauseSystem;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -81,6 +82,7 @@ namespace PlayerSystem
 
         void Update()
         {
+            if (GamePause.Paused) return; // the pause menu owns the cursor, and a frozen view must not turn
             UpdateCursor();
             Look();
             Move();
@@ -123,7 +125,7 @@ namespace PlayerSystem
         {
             var delta = Vector2.zero;
             if (canLook && Cursor.lockState == CursorLockMode.Locked && Mouse.current != null)
-                delta += Mouse.current.delta.ReadValue() * mouseSensitivity;
+                delta += Mouse.current.delta.ReadValue() * (mouseSensitivity * GameSettings.MouseSensitivity);
             if (canLook && Gamepad.current != null)
                 delta += Gamepad.current.rightStick.ReadValue() * (stickLookSpeed * Time.deltaTime);
 
@@ -193,7 +195,7 @@ namespace PlayerSystem
             if (clips.Length > 1 && i == lastClip) i = (i + 1) % clips.Length; // never the same sample twice in a row
             lastClip = i;
             footsteps.pitch = Random.Range(0.92f, 1.08f);
-            footsteps.PlayOneShot(clips[i], footstepVolume);
+            footsteps.PlayOneShot(clips[i], footstepVolume * Random.Range(0.85f, 1f));
         }
 
         /// <summary>Carpet or hard floor, judged by the material of the floor under the feet.</summary>
