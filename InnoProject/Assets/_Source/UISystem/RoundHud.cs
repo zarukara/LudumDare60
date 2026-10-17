@@ -1,4 +1,5 @@
 using LocalizationSystem;
+using PauseSystem;
 using RoundSystem;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -51,6 +52,7 @@ namespace UISystem
         {
             var keyboard = Keyboard.current;
             if (keyboard != null && keyboard.f3Key.wasPressedThisFrame) debug = !debug;
+            if (GamePause.Paused) return;
             if (keyboard != null && keyboard.fKey.wasPressedThisFrame) showFlashlightHint = false;
             if (Gamepad.current != null && Gamepad.current.buttonNorth.wasPressedThisFrame) showFlashlightHint = false;
             if (showBoardHint && NearBoard()) showBoardHint = false;
@@ -85,7 +87,7 @@ namespace UISystem
             hint.fontSize = Mathf.RoundToInt(28 * scale);
             small.fontSize = Mathf.RoundToInt(18 * scale);
 
-            if (!finished)
+            if (!finished && !GamePause.Paused) // the pause screen stays clean
             {
                 float y = Screen.height * 0.8f;
                 if (showFlashlightHint) Hint(Localization.Get("hint.flashlight"), ref y);

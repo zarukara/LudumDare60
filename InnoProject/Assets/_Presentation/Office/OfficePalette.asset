@@ -78,3 +78,5 @@ MonoBehaviour:
   dialGlow: {fileID: 2100000, guid: 5d7f3d097d44f8a4795e4640a52d1406, type: 2}
   recLamp: {fileID: 2100000, guid: a5c7e54bf8038aa42940e27cefc28c16, type: 2}
   vhs: {fileID: 2100000, guid: 75f071b0ed12bfd439ed5a237b151f63, type: 2}
+  doorOpen: {fileID: 8300000, guid: 44907a255dc26f64eaed28134c14318d, type: 3}
+  doorClose: {fileID: 8300000, guid: 64f80013483157c41bd418f002fdc2e7, type: 3}

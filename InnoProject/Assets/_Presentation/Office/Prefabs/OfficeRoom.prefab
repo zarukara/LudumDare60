@@ -30666,6 +30666,12 @@ MonoBehaviour:
   closeDistance: 3.4
   leafCollider: {fileID: 9173391287937333947}
   locked: 0
+  knockRattle: 4
+  knockPush: 3.5
+  openSound: {fileID: 8300000, guid: 44907a255dc26f64eaed28134c14318d, type: 3}
+  closeSound: {fileID: 8300000, guid: 64f80013483157c41bd418f002fdc2e7, type: 3}
+  soundVolume: 0.7
+  closeSoundLead: 0.18
 --- !u!1 &3206328484633234962
 GameObject:
   m_ObjectHideFlags: 0
@@ -71486,6 +71492,12 @@ MonoBehaviour:
   closeDistance: 3.4
   leafCollider: {fileID: 2994779119984533970}
   locked: 0
+  knockRattle: 4
+  knockPush: 3.5
+  openSound: {fileID: 8300000, guid: 44907a255dc26f64eaed28134c14318d, type: 3}
+  closeSound: {fileID: 8300000, guid: 64f80013483157c41bd418f002fdc2e7, type: 3}
+  soundVolume: 0.7
+  closeSoundLead: 0.18
 --- !u!1 &7351431963742683087
 GameObject:
   m_ObjectHideFlags: 0

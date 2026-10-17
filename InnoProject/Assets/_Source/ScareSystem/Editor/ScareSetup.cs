@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using System.Text;
 using PlayerSystem;
@@ -21,15 +22,20 @@ namespace ScareSystem.EditorTools
 
         static readonly (string name, string description, SoundBank.Placeholder placeholder, float volume)[] Slots =
         {
-            (BabaikaChase.SoundDescend, "Шорох и скрежет, пока бабайка спускается с потолка в катсцене (3D).", SoundBank.Placeholder.Hiss, 0.9f),
-            (BabaikaChase.SoundScream, "Её вопль в конце спуска, прямо перед погоней (3D).", SoundBank.Placeholder.Scream, 1f),
+            (BabaikaChase.SoundScream, "Её вопль в конце спуска с потолка, прямо перед погоней (3D).", SoundBank.Placeholder.Scream, 1f),
             (BabaikaChase.SoundChaseLoop, "Петля: хрип и скрежет бабайки, пока она гонится (3D, звучит от неё).", SoundBank.Placeholder.None, 0.8f),
             (BabaikaChase.SoundClaws, "Щелчок когтей по полу и стенам на каждом её шаге (3D). Пусто: бетонные шаги выше тоном.", SoundBank.Placeholder.None, 0.6f),
             (BabaikaChase.SoundMusic, "Петля: музыка или гул погони (2D).", SoundBank.Placeholder.Drone, 0.6f),
             (BabaikaChase.SoundHeartbeat, "Петля: сердцебиение, громче и быстрее, когда она близко (2D).", SoundBank.Placeholder.Heartbeat, 0.8f),
             (BabaikaChase.SoundSlam, "Дверь с силой захлопывается за игроком на 1 уровне (3D).", SoundBank.Placeholder.Slam, 1f),
             (BabaikaChase.SoundBang, "Бабайка бьётся в захлопнутую дверь, лучше 3-4 варианта (3D).", SoundBank.Placeholder.Thud, 1f),
-            (BabaikaChase.SoundScreamer, "Скример, когда она хватает игрока (2D, громко).", SoundBank.Placeholder.Scream, 1f),
+            (BabaikaChase.SoundScreamer, "Скример, когда она хватает игрока (2D, громко). Пусто: её вопль babaika_scream.", SoundBank.Placeholder.Scream, 1f),
+        };
+
+        /// <summary>Slots that borrow another slot's files while they have none of their own.</summary>
+        static readonly (string slot, string fallback)[] Fallbacks =
+        {
+            (BabaikaChase.SoundScreamer, BabaikaChase.SoundScream),
         };
 
         /// <summary>Creates or updates the bank: every slot exists with its description; chosen sounds are kept.</summary>
@@ -56,7 +62,10 @@ namespace ScareSystem.EditorTools
                 }
                 slot.description = description;
                 slot.placeholder = placeholder;
+                slot.fallback = Array.Find(Fallbacks, f => f.slot == name).fallback;
             }
+            // Slots the chase no longer plays go, unless sounds were already chosen for them.
+            bank.slots.RemoveAll(s => !Array.Exists(Slots, x => x.name == s.name) && (s.clips == null || s.clips.Length == 0));
             EditorUtility.SetDirty(bank);
             AssetDatabase.SaveAssetIfDirty(bank);
             WriteReadme();
@@ -86,6 +95,7 @@ namespace ScareSystem.EditorTools
             chase.player = player;
             chase.view = view;
             chase.sounds = EnsureSoundBank();
+            chase.ambience = game.GetComponent<Ambience>();
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(BabaikaPrefabPath);
             chase.babaikaPrefab = prefab != null ? prefab.GetComponent<BabaikaSystem.Babaika>() : null;
             EditorUtility.SetDirty(chase);

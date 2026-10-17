@@ -30,11 +30,14 @@ Material:
     m_Ints: []
     m_Floats:
     - _Bleed: 1.2
-    - _Jitter: 0.0004
-    - _Noise: 0.03
+    - _Dropouts: 0.06
+    - _HeadSwitch: 0.35
+    - _Jitter: 0.0003
+    - _Noise: 0.02
     - _Saturation: 0.85
     - _Scanlines: 0.08
     - _Strength: 1
+    - _Tracking: 0.2
     - _Vignette: 0.7
     m_Colors:
     - _Tint: {r: 0.96, g: 1, b: 0.94, a: 1}

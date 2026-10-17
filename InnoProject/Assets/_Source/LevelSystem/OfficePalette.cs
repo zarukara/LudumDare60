@@ -3,7 +3,7 @@ using UnityEngine;
 namespace LevelSystem
 {
     /// <summary>
-    /// All materials of the office level. Created and filled by the editor menu "Office/Build All"
+    /// All materials (and the door sounds) of the office level. Created and filled by the editor menu "Office/Build All"
     /// (assets in Assets/_Presentation/Office). Textured materials expect UVs in metres (see <see cref="Prims"/>).
     /// </summary>
     [CreateAssetMenu(menuName = "Office/Palette", fileName = "OfficePalette")]
@@ -78,5 +78,9 @@ namespace LevelSystem
 
         [Header("Camera")]
         public Material vhs;
+
+        [Header("Sounds")]
+        public AudioClip doorOpen;
+        public AudioClip doorClose;
     }
 }

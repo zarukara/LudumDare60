@@ -7,7 +7,8 @@ namespace SoundSystem
     /// <summary>
     /// Named sound slots. Put audio files named after a slot into the bank's folder ("door_slam.wav",
     /// "door_bang_2.ogg", ...) and they land in that slot by themselves (SoundBankSync); several files in one slot
-    /// play in random order. A slot without files plays its rough generated placeholder, or nothing.
+    /// play in random order. A slot without files plays the files of its fallback slot, its rough generated
+    /// placeholder, or nothing.
     /// </summary>
     [CreateAssetMenu(menuName = "Sound/Sound Bank", fileName = "SoundBank")]
     public class SoundBank : ScriptableObject
@@ -31,7 +32,9 @@ namespace SoundSystem
             public AudioClip[] clips = new AudioClip[0];
             [Range(0f, 1f)] public float volume = 1f;
             public Vector2 pitch = Vector2.one;
-            [Tooltip("Played while the slot has no files.")]
+            [Tooltip("While the slot has no files, the files of this slot play instead (at this slot's volume).")]
+            public string fallback;
+            [Tooltip("Played while the slot has no files (and no fallback slot has any).")]
             public Placeholder placeholder;
         }
 
@@ -42,14 +45,19 @@ namespace SoundSystem
 
         public Slot Find(string slotName) => slots.Find(s => s.name == slotName);
 
-        /// <summary>A random clip of the slot (never the same twice in a row), its placeholder, or null.</summary>
+        /// <summary>A random clip of the slot (never the same twice in a row), its fallback slot's, its placeholder, or null.</summary>
         public AudioClip Pick(string slotName, out Slot slot)
         {
             slot = Find(slotName);
             if (slot == null) return null;
             int count = 0;
             foreach (var c in slot.clips) if (c != null) count++;
-            if (count == 0) return PlaceholderClip(slot.placeholder);
+            if (count == 0)
+            {
+                var other = string.IsNullOrEmpty(slot.fallback) || slot.fallback == slotName ? null : Find(slot.fallback);
+                if (other != null && Array.Exists(other.clips, c => c != null)) return Pick(other.name, out _);
+                return PlaceholderClip(slot.placeholder);
+            }
 
             lastPick.TryGetValue(slotName, out int last);
             int pick = UnityEngine.Random.Range(0, count);
@@ -63,11 +71,11 @@ namespace SoundSystem
             return null;
         }
 
-        /// <summary>One-shot from a point in the world.</summary>
-        public void PlayAt(string slotName, Vector3 position, float volume = 1f)
+        /// <summary>One-shot from a point in the world. Returns the clip played, or null.</summary>
+        public AudioClip PlayAt(string slotName, Vector3 position, float volume = 1f)
         {
             var clip = Pick(slotName, out var slot);
-            if (clip == null) return;
+            if (clip == null) return null;
             var go = new GameObject("Sound_" + slotName);
             go.transform.position = position;
             var source = go.AddComponent<AudioSource>();
@@ -77,16 +85,18 @@ namespace SoundSystem
             source.pitch = UnityEngine.Random.Range(slot.pitch.x, slot.pitch.y);
             source.PlayOneShot(clip, slot.volume * volume);
             Destroy(go, clip.length / Mathf.Max(0.1f, source.pitch) + 0.2f);
+            return clip;
         }
 
-        /// <summary>One-shot on a source (2D or 3D as the source is set up).</summary>
-        public void PlayOn(AudioSource source, string slotName, float volume = 1f)
+        /// <summary>One-shot on a source (2D or 3D as the source is set up). Returns the clip played, or null.</summary>
+        public AudioClip PlayOn(AudioSource source, string slotName, float volume = 1f)
         {
-            if (source == null) return;
+            if (source == null) return null;
             var clip = Pick(slotName, out var slot);
-            if (clip == null) return;
+            if (clip == null) return null;
             source.pitch = UnityEngine.Random.Range(slot.pitch.x, slot.pitch.y);
             source.PlayOneShot(clip, slot.volume * volume);
+            return clip;
         }
 
         /// <summary>A looping source on <paramref name="host"/> playing the slot, or null when the slot is silent.</summary>
