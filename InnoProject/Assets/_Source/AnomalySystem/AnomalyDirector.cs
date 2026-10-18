@@ -8,9 +8,10 @@ namespace AnomalySystem
     public static class AnomalyDirector
     {
         /// <summary>
-        /// Puts one random anomaly prefab into the office, never the same as the previous one while there are others.
+        /// Puts one random anomaly prefab into the office. They come like cards from a shuffled deck: none repeats
+        /// until every one has been shown, then the deck starts over (never with the one just shown).
         /// </summary>
-        /// <param name="recent">Names of the anomalies so far, newest last; updated here.</param>
+        /// <param name="recent">Names shown from the current deck, newest last; updated here.</param>
         /// <param name="forced">Prefab or anomaly name to use instead of a random one (for testing).</param>
         public static Anomaly Spawn(IReadOnlyList<GameObject> prefabs, Transform office, System.Random rng, List<string> recent, string forced = null)
         {
@@ -22,9 +23,15 @@ namespace AnomalySystem
                 pick = valid.FirstOrDefault(p => p.name == forced || DisplayName(p) == forced);
             if (pick == null)
             {
-                string previous = recent.Count > 0 ? recent[recent.Count - 1] : null;
-                var pool = valid.Where(p => p.name != previous).ToList();
-                if (pool.Count == 0) pool = valid;
+                var pool = valid.Where(p => !recent.Contains(p.name)).ToList();
+                if (pool.Count == 0)
+                {
+                    // All shown: a new deck.
+                    string previous = recent.Count > 0 ? recent[recent.Count - 1] : null;
+                    recent.Clear();
+                    pool = valid.Where(p => p.name != previous).ToList();
+                    if (pool.Count == 0) pool = valid;
+                }
                 pick = pool[rng.Next(pool.Count)];
             }
 
@@ -36,8 +43,7 @@ namespace AnomalySystem
             if (string.IsNullOrEmpty(anomaly.anomalyName)) anomaly.anomalyName = pick.name;
             anomaly.Activate();
 
-            recent.Add(pick.name);
-            while (recent.Count > 8) recent.RemoveAt(0);
+            if (!recent.Contains(pick.name)) recent.Add(pick.name);
             return anomaly;
         }
 

@@ -550,9 +550,7 @@ namespace LevelSystem
                 Build = (o, p) => Moved(o, OldTech.Boombox(o.Find("Props/Bookcase"), p, new Vector3(-0.3f, 2f, 0.21f), 0f)),
             },
             new AnomalySpec { File = "Gramophone", Title = "Граммофон", Build = (o, p) => OldTech.Gramophone(o, p, new Vector3(2.9f, 0f, 3.3f), 137f) },
-            new AnomalySpec { File = "PC_Tower", Title = "Системный блок", Build = (o, p) => OldTech.PcTower(o, p, new Vector3(7.7f, 0f, 3.8f), -90f) },
             new AnomalySpec { File = "Film_Camera", Title = "Кинокамера", Build = (o, p) => OldTech.FilmCamera(o, p, new Vector3(2.4f, 0f, 1.6f), 114f) },
-            new AnomalySpec { File = "Desk_Fan", Title = "Вентилятор", Build = (o, p) => OnDesk(o, "Desk_E1", d => OldTech.DeskFan(d, p, new Vector3(0.45f, DeskTop, 0.12f), 0f)) },
         };
 
         /// <summary>Builds on a desk (desk space), then hangs the result directly under the office root.</summary>

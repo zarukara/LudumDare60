@@ -11,8 +11,8 @@ using UnityEngine;
 namespace ScareSystem.EditorTools
 {
     /// <summary>
-    /// Sets up the Babaika chase: the scare sound bank with its named slots (a README.txt next to it lists them)
-    /// and the <see cref="BabaikaChase"/> on the scene's Game object.
+    /// Sets up the Babaika's scares: the scare sound bank with its named slots (a README.txt next to it lists them),
+    /// the <see cref="BabaikaChase"/> with its aftermath, and the hunt on the exit stairs (<see cref="AddStairs"/>).
     /// </summary>
     public static class ScareSetup
     {
@@ -31,6 +31,11 @@ namespace ScareSystem.EditorTools
             (BabaikaChase.SoundBang, "Бабайка бьётся в захлопнутую дверь, лучше 3-4 варианта (3D).", SoundBank.Placeholder.Thud, 1f),
             (BabaikaChase.SoundScreamer, "Скример, когда она хватает игрока (2D, громко). Пусто: её вопль babaika_scream.", SoundBank.Placeholder.Scream, 1f),
             (GoreOffice.SoundReveal, "После погони: открылась дверь офиса 6 уровня, а там кишки и кровь (2D, вместе с испугом).", SoundBank.Placeholder.None, 0.9f),
+            (StairsHunt.SoundAlarm, "Петля: сирена тревоги, воет с 7 этажа до выхода, пока мигает красный свет (2D, тише, когда она рядом).", SoundBank.Placeholder.Drone, 0.8f),
+            (StairsHunt.SoundBreathIn, "Игрок затаил дыхание за тележкой: короткий резкий вдох (2D).", SoundBank.Placeholder.None, 0.8f),
+            (StairsHunt.SoundBreathOut, "Она проползла мимо: облегчённый выдох (2D).", SoundBank.Placeholder.None, 0.8f),
+            (StairsHunt.SoundGasp, "Сорвался на шкале дыхания: судорожный вдох или кашель, сразу перед скримером (2D).", SoundBank.Placeholder.Hiss, 1f),
+            (StairsHunt.SoundRewind, "Петля: кассета перематывается назад после скримера на лестнице (2D).", SoundBank.Placeholder.Rewind, 0.7f),
         };
 
         /// <summary>Slots that borrow another slot's files while they have none of their own.</summary>
@@ -77,7 +82,8 @@ namespace ScareSystem.EditorTools
         static void WriteReadme()
         {
             var text = new StringBuilder();
-            text.AppendLine("Звуки события с бабайкой (5 уровень: спуск с потолка, погоня до 1 уровня, дверь или скример; потом кишки на 6 уровне).");
+            text.AppendLine("Звуки событий с бабайкой (5 уровень: спуск с потолка, погоня до 1 уровня, дверь или скример; потом кишки на 6 уровне;");
+            text.AppendLine("в конце лестница: красный свет с 7 этажа, она ползёт по потолку, игрок прячется и задерживает дыхание).");
             text.AppendLine("Положи сюда файлы с этими именами, и они сами попадут в свой слот ScareSounds.asset.");
             text.AppendLine("Несколько вариантов одного звука: door_bang.wav, door_bang_2.wav, door_bang_3.wav, будут играть вперемешку.");
             text.AppendLine("Подходят .wav, .ogg, .mp3. Пока файла нет, играет грубая заглушка или тишина.");
@@ -87,7 +93,10 @@ namespace ScareSystem.EditorTools
             AssetDatabase.ImportAsset(SoundFolder + "/README.txt");
         }
 
-        /// <summary>Adds (or refreshes) the chase and its aftermath (<see cref="GoreSetup.AddGore"/>) on the Game object.</summary>
+        /// <summary>
+        /// Adds (or refreshes) the chase and its aftermath (<see cref="GoreSetup.AddGore"/>) on the Game object, and the
+        /// hunt on the exit stairs.
+        /// </summary>
         public static BabaikaChase AddChase(GameObject game, RoundManager round, PlayerController player, Camera view)
         {
             var chase = game.GetComponent<BabaikaChase>();
@@ -101,7 +110,40 @@ namespace ScareSystem.EditorTools
             chase.babaikaPrefab = prefab != null ? prefab.GetComponent<BabaikaSystem.Babaika>() : null;
             EditorUtility.SetDirty(chase);
             GoreSetup.AddGore(game, round, chase, player, view);
+            AddStairs(game, round, player, view);
             return chase;
+        }
+
+        /// <summary>
+        /// The hunt on the exit stairs: <see cref="StairsHunt"/>, its <see cref="TapeRewind"/> and HUD on the Game
+        /// object, hiding (<see cref="PlayerHide"/>) on the player.
+        /// </summary>
+        public static StairsHunt AddStairs(GameObject game, RoundManager round, PlayerController player, Camera view)
+        {
+            var hide = player.GetComponent<PlayerHide>();
+            if (hide == null) hide = player.gameObject.AddComponent<PlayerHide>();
+            hide.view = view;
+            var tape = game.GetComponent<TapeRewind>();
+            if (tape == null) tape = game.AddComponent<TapeRewind>();
+            tape.player = player;
+            var hunt = game.GetComponent<StairsHunt>();
+            if (hunt == null) hunt = game.AddComponent<StairsHunt>();
+            hunt.round = round;
+            hunt.player = player;
+            hunt.hide = hide;
+            hunt.flashlight = player.GetComponentInChildren<Flashlight>(true);
+            hunt.view = view;
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(BabaikaPrefabPath);
+            hunt.babaikaPrefab = prefab != null ? prefab.GetComponent<BabaikaSystem.Babaika>() : null;
+            hunt.sounds = EnsureSoundBank();
+            hunt.ambience = game.GetComponent<Ambience>();
+            hunt.tape = tape;
+            var hud = game.GetComponent<UISystem.StairsHud>();
+            if (hud == null) hud = game.AddComponent<UISystem.StairsHud>();
+            hud.hunt = hunt;
+            hud.hide = hide;
+            foreach (var changed in new UnityEngine.Object[] { hide, tape, hunt, hud }) EditorUtility.SetDirty(changed);
+            return hunt;
         }
     }
 }

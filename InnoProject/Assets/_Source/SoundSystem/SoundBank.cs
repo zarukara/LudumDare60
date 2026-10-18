@@ -22,6 +22,7 @@ namespace SoundSystem
             Heartbeat,
             Hiss,
             Drone,
+            Rewind,
         }
 
         [Serializable]
@@ -139,6 +140,7 @@ namespace SoundSystem
                 SoundBank.Placeholder.Scream => 1.6f,
                 SoundBank.Placeholder.Heartbeat => 0.9f,
                 SoundBank.Placeholder.Hiss => 2.4f,
+                SoundBank.Placeholder.Rewind => 2f,
                 _ => 6f,
             };
             int length = (int)(rate * seconds);
@@ -172,6 +174,11 @@ namespace SoundSystem
                         break;
                     case SoundBank.Placeholder.Hiss:
                         v = (mid * 0.5f + low * 1.5f) * Mathf.Sin(Mathf.Clamp01(t / seconds) * Mathf.PI) * (0.6f + 0.4f * Mathf.Sin(t * 23f));
+                        break;
+                    case SoundBank.Placeholder.Rewind:
+                        // A tape motor whining at speed over hiss; whole cycles in the 2 s, so it loops.
+                        float whine = Mathf.Sin(t * Mathf.PI * 2f * 180f) * 0.25f + Mathf.Sin(t * Mathf.PI * 2f * 360f) * 0.12f + Mathf.Sin(t * Mathf.PI * 2f * 545f) * 0.06f;
+                        v = (whine * (0.8f + 0.2f * Mathf.Sin(t * Mathf.PI * 2f * 7f)) + mid * 0.3f + low * 0.6f) * 0.6f;
                         break;
                     default:
                         v = (Mathf.Sin(t * Mathf.PI * 2f * 41f) * 0.35f + Mathf.Sin(t * Mathf.PI * 2f * 43.5f) * 0.3f + Mathf.Sin(t * Mathf.PI * 2f * 61.7f) * 0.15f + low * 0.8f) * 0.6f;

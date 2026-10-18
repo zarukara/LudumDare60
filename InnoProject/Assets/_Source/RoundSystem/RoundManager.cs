@@ -10,8 +10,8 @@ namespace RoundSystem
 {
     /// <summary>
     /// The round loop (Exit 8 style). Each round the office is spawned anew and with <see cref="anomalyChance"/> gets
-    /// one random anomaly prefab from <see cref="anomalies"/> (never the same one twice in a row). The player looks
-    /// around and leaves through one of the
+    /// one random anomaly prefab from <see cref="anomalies"/> (none repeats until every one has been shown, mistakes
+    /// or not). The player looks around and leaves through one of the
     /// two exits: forward = "no anomaly", back = "there is an anomaly". A right call adds 1 to the progress, a wrong
     /// one resets it to 0 (or takes <see cref="mistakePenalty"/> off). After <see cref="roundsToWin"/> right calls
     /// in a row the win event fires and the corridor leads to the exit.

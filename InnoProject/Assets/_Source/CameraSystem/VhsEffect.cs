@@ -7,8 +7,9 @@ namespace CameraSystem
     /// <summary>
     /// Makes the camera look like a played-back VHS tape. The camera draws into a texture that a full-screen
     /// RawImage shows through the "Office/VHS" material, with the VCR's "PLAY" / "PAUSE" mark, the pause key under
-    /// it and a running tape counter on top; an empty camera clears the screen behind it. Only this camera is
-    /// affected, no render pipeline asset changes. Runs in Play Mode only.
+    /// it and a running tape counter on top; an empty camera clears the screen behind it. While
+    /// <see cref="Rewinding"/> is set the mark reads "◄◄ REW", the counter runs back and the picture tears like a
+    /// tape in fast rewind. Only this camera is affected, no render pipeline asset changes. Runs in Play Mode only.
     /// </summary>
     [RequireComponent(typeof(Camera))]
     public class VhsEffect : MonoBehaviour
@@ -20,7 +21,16 @@ namespace CameraSystem
         public bool showOverlay = true;
         public string date = "17.10.1996";
 
+        /// <summary>The tape is running back (a scare's rewind, see ScareSystem.TapeRewind).</summary>
+        public static bool Rewinding;
+
         static readonly int Strength = Shader.PropertyToID("_Strength");
+        // Tape faults, pushed to their harshest while rewinding.
+        static readonly (int id, float rewound)[] Faults =
+        {
+            (Shader.PropertyToID("_Tracking"), 1f), (Shader.PropertyToID("_HeadSwitch"), 1f), (Shader.PropertyToID("_Dropouts"), 0.6f),
+            (Shader.PropertyToID("_Jitter"), 0.004f), (Shader.PropertyToID("_Noise"), 0.12f),
+        };
         static readonly Color OsdColor = new Color(0.95f, 0.97f, 0.95f, 0.9f);
         static readonly Color KeyColor = new Color(0.95f, 0.97f, 0.95f, 0.7f);
         const float Left = 80f, ModeTop = -60f, KeyTop = -128f;
@@ -32,8 +42,9 @@ namespace CameraSystem
         RawImage image;
         Text mode, key, counter;
         RectTransform modeSign, keySign;
-        float started;
-        bool shownPaused;
+        float[] calmFaults;
+        float tape, rewind;
+        bool shownPaused, shownRewind;
 
         void OnEnable()
         {
@@ -44,7 +55,9 @@ namespace CameraSystem
                 return;
             }
             instance = new Material(material) { name = material.name + " (Instance)" };
-            started = Time.time;
+            calmFaults = new float[Faults.Length];
+            for (int i = 0; i < Faults.Length; i++) calmFaults[i] = instance.GetFloat(Faults[i].id);
+            tape = 0f;
             BuildOutput();
             Resize();
         }
@@ -66,10 +79,15 @@ namespace CameraSystem
         {
             if (frame == null || frame.width != Width || frame.height != Height) Resize();
             instance.SetFloat(Strength, strength);
-            if (GamePause.Paused != shownPaused) ShowPause(GamePause.Paused);
+            if (GamePause.Paused != shownPaused || Rewinding != shownRewind) ShowMode(GamePause.Paused, Rewinding);
+            float was = rewind;
+            rewind = Mathf.MoveTowards(rewind, Rewinding ? 1f : 0f, Time.unscaledDeltaTime * 5f);
+            if (rewind > 0f || was > 0f)
+                for (int i = 0; i < Faults.Length; i++) instance.SetFloat(Faults[i].id, Mathf.Lerp(calmFaults[i], Faults[i].rewound, rewind));
+            tape = Mathf.Max(0f, tape + (Rewinding ? -8f : 1f) * Time.deltaTime);
             if (counter != null)
             {
-                int seconds = Mathf.FloorToInt(Time.time - started);
+                int seconds = Mathf.FloorToInt(tape);
                 counter.text = $"{date}    SP {seconds / 3600}:{seconds / 60 % 60:00}:{seconds % 60:00}";
             }
         }
@@ -131,20 +149,21 @@ namespace CameraSystem
             key = Label("Tab", TextAnchor.UpperLeft, new Vector2(0f, 1f), new Vector2(Left, KeyTop), 30, KeyColor);
             keySign = PauseSign(21f, KeyColor, 2f);
             counter = Label("", TextAnchor.LowerLeft, new Vector2(0f, 0f), new Vector2(Left, 60f), 46, OsdColor);
-            ShowPause(false);
+            ShowMode(false, false);
         }
 
         /// <summary>
         /// "PLAY ►" with "❚❚ Tab" under it, or while paused "PAUSE ❚❚" with "► Tab" and the still picture faded
-        /// almost to black under the settings.
+        /// almost to black under the settings, or "◄◄ REW" while the tape runs back.
         /// </summary>
-        void ShowPause(bool paused)
+        void ShowMode(bool paused, bool rewinding)
         {
             shownPaused = paused;
+            shownRewind = rewinding;
             image.color = paused ? new Color(0.22f, 0.22f, 0.22f) : Color.white;
             if (mode == null) return;
-            mode.text = paused ? "PAUSE" : "PLAY ►";
-            modeSign.gameObject.SetActive(paused);
+            mode.text = rewinding ? "◄◄ REW" : paused ? "PAUSE" : "PLAY ►";
+            modeSign.gameObject.SetActive(paused && !rewinding);
             modeSign.anchoredPosition = new Vector2(Left + mode.preferredWidth + 16f, ModeTop - 9f);
             key.text = paused ? "► Tab" : "Tab";
             key.rectTransform.anchoredPosition = new Vector2(paused ? Left : Left + keySign.sizeDelta.x + 12f, KeyTop);

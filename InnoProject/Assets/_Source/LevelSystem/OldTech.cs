@@ -134,22 +134,6 @@ namespace LevelSystem
             return g;
         }
 
-        public static Transform PcTower(Transform parent, OfficePalette p, Vector3 floor, float yaw)
-        {
-            var g = Prims.Group("PC_Tower", parent, floor, yaw);
-            Prims.Box("Case", g, new Vector3(0f, 0.22f, 0f), new Vector3(0.2f, 0.44f, 0.45f), p.beige);
-            foreach (float y in new[] { 0.38f, 0.33f })
-            {
-                Prims.Box("Drive_Bay", g, new Vector3(0f, y, 0.226f), new Vector3(0.16f, 0.04f, 0.004f), p.lightPlastic, false);
-                Prims.Box("Drive_Slot", g, new Vector3(0f, y, 0.229f), new Vector3(0.12f, 0.006f, 0.002f), p.bakelite, false);
-            }
-            Prims.Box("Floppy", g, new Vector3(0f, 0.27f, 0.226f), new Vector3(0.11f, 0.03f, 0.004f), p.lightPlastic, false);
-            Prims.Box("Floppy_Slot", g, new Vector3(0f, 0.272f, 0.229f), new Vector3(0.08f, 0.004f, 0.002f), p.bakelite, false);
-            Prims.Box("Power_Button", g, new Vector3(0.04f, 0.12f, 0.227f), new Vector3(0.03f, 0.03f, 0.006f), p.bakelite, false);
-            Prims.Box("Power_LED", g, new Vector3(-0.04f, 0.12f, 0.227f), new Vector3(0.012f, 0.006f, 0.004f), p.exitSign, false);
-            return g;
-        }
-
         /// <summary>Old film camera with two reels on a wooden tripod (stands on the floor).</summary>
         public static Transform FilmCamera(Transform parent, OfficePalette p, Vector3 floor, float yaw)
         {
@@ -171,29 +155,6 @@ namespace LevelSystem
                 Prims.Cylinder("Reel", g, new Vector3(0f, 1.61f, z), 0.11f, 0.025f, p.bakelite, false, new Vector3(0f, 0f, 90f));
             Prims.Box("Crank", g, new Vector3(0.09f, 1.38f, -0.05f), new Vector3(0.012f, 0.08f, 0.012f), p.chrome, false);
             Prims.Sphere("Rec_Lamp", g, new Vector3(-0.05f, 1.48f, 0.15f), Vector3.one * 0.025f, p.recLamp);
-            return g;
-        }
-
-        public static Transform DeskFan(Transform parent, OfficePalette p, Vector3 desk, float yaw)
-        {
-            var g = Prims.Group("Desk_Fan", parent, desk, yaw);
-            Prims.Cylinder("Base", g, new Vector3(0f, 0.015f, 0f), 0.09f, 0.03f, p.vintageGreen);
-            Prims.Cylinder("Stem", g, new Vector3(0f, 0.12f, -0.01f), 0.015f, 0.2f, p.vintageGreen);
-            Prims.Cylinder("Motor", g, new Vector3(0f, 0.25f, -0.05f), 0.05f, 0.1f, p.vintageGreen, false, new Vector3(90f, 0f, 0f));
-            var hub = new Vector3(0f, 0.25f, 0.02f);
-            for (int i = 0; i < 3; i++)
-            {
-                float a = i * 120f;
-                var dir = Quaternion.Euler(0f, 0f, a) * Vector3.up;
-                Prims.Box("Blade", g, hub + dir * 0.065f, new Vector3(0.06f, 0.1f, 0.004f), p.brass, false, new Vector3(0f, 0f, a));
-            }
-            for (int i = 0; i < 8; i++)
-            {
-                float a = i * 45f;
-                var dir = Quaternion.Euler(0f, 0f, a) * Vector3.up;
-                Prims.Box("Cage_Wire", g, hub + new Vector3(0f, 0f, 0.035f) + dir * 0.075f, new Vector3(0.004f, 0.15f, 0.004f), p.chrome, false, new Vector3(0f, 0f, a));
-            }
-            Prims.Cylinder("Badge", g, hub + new Vector3(0f, 0f, 0.04f), 0.02f, 0.006f, p.brass, false, new Vector3(90f, 0f, 0f));
             return g;
         }
     }

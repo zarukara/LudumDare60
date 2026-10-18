@@ -7,7 +7,8 @@ namespace PlayerSystem
     /// (one step per stepLength), the arms swing against them, and the body's right arm hides while the torch hand
     /// (<see cref="Flashlight.viewmodel"/>) is up. Joints are found by name: Pelvis, Leg_L/R (_Knee, _Ankle),
     /// Arm_L/R (_Elbow). Lives under the player root, a little behind the camera, so looking down shows the
-    /// shirt, the tie and the shoes instead of the inside of the chest.
+    /// shirt, the tie and the shoes instead of the inside of the chest. Hidden while crouching behind cover, where
+    /// the eyes would be inside it.
     /// </summary>
     public class PlayerBody : MonoBehaviour
     {
@@ -21,7 +22,7 @@ namespace PlayerSystem
 
         Transform pelvis, legL, legR, kneeL, kneeR, ankleL, ankleR, armL, armR, elbowL, elbowR;
         Quaternion pelvisRest, legLRest, legRRest, kneeLRest, kneeRRest, ankleLRest, ankleRRest, armLRest, armRRest, elbowLRest, elbowRRest;
-        Renderer[] rightArm = new Renderer[0];
+        Renderer[] rightArm = new Renderer[0], all = new Renderer[0];
 
         void Awake()
         {
@@ -39,6 +40,7 @@ namespace PlayerSystem
             elbowL = Find("Arm_L_Elbow", out elbowLRest);
             elbowR = Find("Arm_R_Elbow", out elbowRRest);
             if (armR != null) rightArm = armR.GetComponentsInChildren<Renderer>(true);
+            all = GetComponentsInChildren<Renderer>(true);
         }
 
         Transform Find(string jointName, out Quaternion rest)
@@ -81,7 +83,10 @@ namespace PlayerSystem
             if (pelvis != null) pelvis.localRotation = pelvisRest * Quaternion.Euler(0f, 4f * amount * s, 0f);
 
             bool handUp = flashlight != null && flashlight.viewmodel != null && flashlight.Raise > 0.3f;
-            foreach (var r in rightArm) r.enabled = !handUp;
+            bool crouched = controller != null && controller.headDrop > 0.3f;
+            foreach (var r in all) r.enabled = !crouched;
+            if (!crouched)
+                foreach (var r in rightArm) r.enabled = !handUp;
         }
 
         static void Pose(Transform joint, Quaternion rest, float angle)

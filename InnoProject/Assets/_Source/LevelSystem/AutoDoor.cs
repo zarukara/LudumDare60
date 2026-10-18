@@ -71,6 +71,7 @@ namespace LevelSystem
             Vector3 local = Quaternion.Inverse(transform.parent != null ? transform.parent.rotation * closedRotation : closedRotation)
                             * (viewer.position - transform.position);
             float distance = new Vector2(local.x - leafWidth / 2f, local.z).magnitude;
+            if (local.y < -0.5f || local.y > 3f) distance = float.MaxValue; // someone on another floor (stairwell)
             if (targetAngle == 0f && distance < openDistance && !locked)
             {
                 targetAngle = local.z > 0f ? openAngle : -openAngle; // positive yaw swings the leaf towards -Z

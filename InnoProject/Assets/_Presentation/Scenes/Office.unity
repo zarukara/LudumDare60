@@ -135,6 +135,9 @@ GameObject:
   - component: {fileID: 64465229}
   - component: {fileID: 64465230}
   - component: {fileID: 64465231}
+  - component: {fileID: 64465234}
+  - component: {fileID: 64465233}
+  - component: {fileID: 64465232}
   m_Layer: 0
   m_Name: Game
   m_TagString: Untagged
@@ -224,7 +227,9 @@ MonoBehaviour:
   escapeLevel: 1
   zoomFov: 30
   descendSpeed: 0.4
+  pressureGapStart: 4.5
   pressureGap: 1.2
+  minSpeedStart: 1.8
   minSpeed: 3
   maxSpeed: 6.5
   catchGap: 0.45
@@ -308,8 +313,70 @@ MonoBehaviour:
     - {fileID: 8300000, guid: c1bc875e30395244ba74ea4276b1bd47, type: 3}
     - {fileID: 8300000, guid: 9dc5d503e245e0f469afd77c35aa9a4c, type: 3}
   level: 6
+  guts: 0
   zoomFov: 46
   flinch: 0.35
+--- !u!114 &64465232
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 64465223}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3c8641e94d63e854193af8b81c9d0618, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UISystem.StairsHud
+  hunt: {fileID: 64465233}
+  hide: {fileID: 836928935}
+--- !u!114 &64465233
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 64465223}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c6410f4c396c46348b5088fce997f941, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ScareSystem.StairsHunt
+  round: {fileID: 64465225}
+  player: {fileID: 836928932}
+  hide: {fileID: 836928935}
+  flashlight: {fileID: 1940549240}
+  view: {fileID: 1940549239}
+  babaikaPrefab: {fileID: 2017144196616906378, guid: 209809b6ad1056c4a9e6cf14027f77fe, type: 3}
+  sounds: {fileID: 11400000, guid: 053f4f8458b5f4c4cad7b353e37e4dbe, type: 2}
+  ambience: {fileID: 64465229}
+  tape: {fileID: 64465234}
+  startFloor: 7
+  rewindFloors: 3
+  crawlSpeedTop: 1
+  crawlSpeedBottom: 1.45
+  arriveDelay: {x: 1.5, y: 3}
+  seeDistance: 5
+  lightDistance: 7.5
+  breathDistance: 4.6
+  stareChance: {x: 0.55, y: 0.95}
+  stareTime: {x: 1.6, y: 3.6}
+  zoomFov: 40
+--- !u!114 &64465234
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 64465223}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2e1dd9bd4b01f694990620453f3cc64a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ScareSystem.TapeRewind
+  player: {fileID: 836928932}
+  speed: 10
+  duration: {x: 2.2, y: 6}
 --- !u!1001 &240252689
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -384,6 +451,7 @@ GameObject:
   - component: {fileID: 836928934}
   - component: {fileID: 836928933}
   - component: {fileID: 836928932}
+  - component: {fileID: 836928935}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -566,6 +634,22 @@ CharacterController:
   m_SkinWidth: 0.04
   m_MinMoveDistance: 0.001
   m_Center: {x: 0, y: 0.875, z: 0}
+--- !u!114 &836928935
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 836928930}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c43b02c20a78f3c4cb2a68637a5a1bcb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerSystem.PlayerHide
+  view: {fileID: 1940549239}
+  reach: 2.3
+  moveTime: 0.45
+  allowed: 1
 --- !u!1 &920396586
 GameObject:
   m_ObjectHideFlags: 0
