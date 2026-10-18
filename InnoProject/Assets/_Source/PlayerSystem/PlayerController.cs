@@ -188,7 +188,7 @@ namespace PlayerSystem
         void Step()
         {
             if (footsteps == null) return;
-            var clips = ClipsUnderfoot();
+            var clips = SurfaceClips() ?? ClipsUnderfoot();
             if (clips == null || clips.Length == 0) clips = generatedSteps;
             if (clips == null || clips.Length == 0) return;
             int i = Random.Range(0, clips.Length);
@@ -196,6 +196,20 @@ namespace PlayerSystem
             lastClip = i;
             footsteps.pitch = Random.Range(0.92f, 1.08f);
             footsteps.PlayOneShot(clips[i], footstepVolume * Random.Range(0.85f, 1f));
+        }
+
+        static readonly Collider[] nearFeet = new Collider[8];
+
+        /// <summary>The clips of a <see cref="FootstepSurface"/> the feet are in, or null.</summary>
+        AudioClip[] SurfaceClips()
+        {
+            int count = Physics.OverlapSphereNonAlloc(transform.position + Vector3.up * 0.1f, 0.2f, nearFeet, ~0, QueryTriggerInteraction.Collide);
+            for (int i = 0; i < count; i++)
+            {
+                var surface = nearFeet[i].GetComponent<FootstepSurface>();
+                if (surface != null && surface.clips.Length > 0) return surface.clips;
+            }
+            return null;
         }
 
         /// <summary>Carpet or hard floor, judged by the material of the floor under the feet.</summary>

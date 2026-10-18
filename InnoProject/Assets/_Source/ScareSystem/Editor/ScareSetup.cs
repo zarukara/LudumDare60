@@ -30,6 +30,7 @@ namespace ScareSystem.EditorTools
             (BabaikaChase.SoundSlam, "Дверь с силой захлопывается за игроком на 1 уровне (3D).", SoundBank.Placeholder.Slam, 1f),
             (BabaikaChase.SoundBang, "Бабайка бьётся в захлопнутую дверь, лучше 3-4 варианта (3D).", SoundBank.Placeholder.Thud, 1f),
             (BabaikaChase.SoundScreamer, "Скример, когда она хватает игрока (2D, громко). Пусто: её вопль babaika_scream.", SoundBank.Placeholder.Scream, 1f),
+            (GoreOffice.SoundReveal, "После погони: открылась дверь офиса 6 уровня, а там кишки и кровь (2D, вместе с испугом).", SoundBank.Placeholder.None, 0.9f),
         };
 
         /// <summary>Slots that borrow another slot's files while they have none of their own.</summary>
@@ -76,7 +77,7 @@ namespace ScareSystem.EditorTools
         static void WriteReadme()
         {
             var text = new StringBuilder();
-            text.AppendLine("Звуки события с бабайкой (5 уровень: спуск с потолка, погоня до 1 уровня, дверь или скример).");
+            text.AppendLine("Звуки события с бабайкой (5 уровень: спуск с потолка, погоня до 1 уровня, дверь или скример; потом кишки на 6 уровне).");
             text.AppendLine("Положи сюда файлы с этими именами, и они сами попадут в свой слот ScareSounds.asset.");
             text.AppendLine("Несколько вариантов одного звука: door_bang.wav, door_bang_2.wav, door_bang_3.wav, будут играть вперемешку.");
             text.AppendLine("Подходят .wav, .ogg, .mp3. Пока файла нет, играет грубая заглушка или тишина.");
@@ -86,7 +87,7 @@ namespace ScareSystem.EditorTools
             AssetDatabase.ImportAsset(SoundFolder + "/README.txt");
         }
 
-        /// <summary>Adds (or refreshes) the chase on the Game object.</summary>
+        /// <summary>Adds (or refreshes) the chase and its aftermath (<see cref="GoreSetup.AddGore"/>) on the Game object.</summary>
         public static BabaikaChase AddChase(GameObject game, RoundManager round, PlayerController player, Camera view)
         {
             var chase = game.GetComponent<BabaikaChase>();
@@ -99,6 +100,7 @@ namespace ScareSystem.EditorTools
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(BabaikaPrefabPath);
             chase.babaikaPrefab = prefab != null ? prefab.GetComponent<BabaikaSystem.Babaika>() : null;
             EditorUtility.SetDirty(chase);
+            GoreSetup.AddGore(game, round, chase, player, view);
             return chase;
         }
     }

@@ -97,3 +97,15 @@ MonoBehaviour:
     pitch: {x: 1, y: 1}
     fallback: babaika_scream
     placeholder: 3
+  - name: gore_reveal
+    description: "\u041F\u043E\u0441\u043B\u0435 \u043F\u043E\u0433\u043E\u043D\u0438:
+      \u043E\u0442\u043A\u0440\u044B\u043B\u0430\u0441\u044C \u0434\u0432\u0435\u0440\u044C
+      \u043E\u0444\u0438\u0441\u0430 6 \u0443\u0440\u043E\u0432\u043D\u044F, \u0430
+      \u0442\u0430\u043C \u043A\u0438\u0448\u043A\u0438 \u0438 \u043A\u0440\u043E\u0432\u044C
+      (2D, \u0432\u043C\u0435\u0441\u0442\u0435 \u0441 \u0438\u0441\u043F\u0443\u0433\u043E\u043C)."
+    clips:
+    - {fileID: 8300000, guid: df19e8de418632948bbaa703a420e86d, type: 3}
+    volume: 0.9
+    pitch: {x: 1, y: 1}
+    fallback: 
+    placeholder: 0
