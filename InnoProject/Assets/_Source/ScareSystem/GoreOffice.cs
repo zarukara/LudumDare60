@@ -8,11 +8,12 @@ using UnityEngine;
 namespace ScareSystem
 {
     /// <summary>
-    /// The Babaika's aftermath. Once the chase is over (escaped or caught), the office of <see cref="level"/> is full
-    /// of what she left: guts and blood on the floor and the desks (<see cref="GoreBuilder"/>). No anomaly spawns
-    /// there, and either way out counts as right: the player may take it for an anomaly or for decoration.
-    /// The first time in a run its entrance door opens, a short startle: the view snaps to the guts and zooms in,
-    /// the player flinches back, the <see cref="SoundReveal"/> slot plays and the ambience steps aside.
+    /// The Babaika's aftermath. Once the chase is over (escaped or caught), the office of <see cref="level"/> shows
+    /// what she left: the people who worked there flayed in their chairs, blood on the floor, desks and walls, and
+    /// with <see cref="guts"/> heaps and mountains of guts (<see cref="GoreBuilder"/>). No anomaly spawns there, and
+    /// either way out counts as right: the player may take it for an anomaly or for decoration.
+    /// The first time in a run the player steps in, a short startle: the view snaps to the body facing the door and
+    /// zooms in, the player flinches back, the <see cref="SoundReveal"/> slot plays and the ambience steps aside.
     /// </summary>
     public class GoreOffice : MonoBehaviour
     {
@@ -28,13 +29,15 @@ namespace ScareSystem
         public GoreBuilder.Kit kit = new GoreBuilder.Kit();
         [Tooltip("The level whose office is filled once the chase is over.")]
         public int level = 6;
+        [Tooltip("Heaps and mountains of guts too (off: the bodies and blood only).")]
+        public bool guts;
 
         [Header("Startle")]
         public float zoomFov = 46f;
         [Tooltip("How far the player flinches back, metres.")]
         public float flinch = 0.35f;
 
-        AutoDoor entrance;
+        Transform office;
         AudioSource voice;
         Vector3 lookAt;
         bool startled;
@@ -82,18 +85,24 @@ namespace ScareSystem
 
         void OnRoundStarted(int progress, bool hasAnomaly)
         {
-            entrance = null;
+            office = null;
             if (!IsGoreLevel(progress) || round.CurrentStage == null || round.CurrentStage.Room == null) return;
-            var room = round.CurrentStage.Room.transform;
-            lookAt = GoreBuilder.Build(room, kit, new System.Random(System.Environment.TickCount));
-            entrance = BabaikaChase.Door(round.CurrentStage, "Entrance_Door");
+            office = round.CurrentStage.Room.transform;
+            lookAt = GoreBuilder.Build(office, kit, new System.Random(System.Environment.TickCount), guts);
         }
 
         void Update()
         {
-            if (startled || entrance == null || !entrance.IsOpen || player == null || view == null) return;
+            // Only once the player stands in the office: never from a corridor, where the walls hide the room.
+            if (startled || office == null || player == null || view == null || !InOffice()) return;
             startled = true;
             StartCoroutine(Startle());
+        }
+
+        bool InOffice()
+        {
+            var local = office.InverseTransformPoint(player.transform.position);
+            return local.x > 0.2f && local.x < OfficeRoomBuilder.Width - 0.2f && local.z > 0.4f && local.z < OfficeRoomBuilder.Length - 0.2f;
         }
 
         IEnumerator Startle()

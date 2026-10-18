@@ -24,9 +24,10 @@ namespace ScareSystem
 
         /// <summary>
         /// Seats a body in <paramref name="chair"/>; <paramref name="deskEdge"/> is how far ahead of the chair (along
-        /// its +Z) the desk's front edge is, so a body falling forward lands on the desk.
+        /// its +Z) the desk's front edge is, so a body falling forward lands on the desk. Returns its upper body
+        /// (between chest and head, world space): what to look at.
         /// </summary>
-        public static void Seat(Transform root, GoreBuilder.Kit kit, Random rng, Transform chair, float deskEdge, Pose pose)
+        public static Vector3 Seat(Transform root, GoreBuilder.Kit kit, Random rng, Transform chair, float deskEdge, Pose pose)
         {
             var body = new GameObject("Body_" + pose).transform;
             body.SetParent(root, false);
@@ -139,7 +140,8 @@ namespace ScareSystem
             var seat = root.InverseTransformPoint(body.TransformPoint(new Vector3(0f, 0.5f, 0.06f)));
             GoreBuilder.Puddle(root, kit, rng, seat, 0.22f, root.InverseTransformDirection(body.up));
             var floor = root.InverseTransformPoint(body.TransformPoint(new Vector3(0f, 0f, 0.3f)));
-            GoreBuilder.Puddle(root, kit, rng, new Vector3(floor.x, 0f, floor.z), R(rng, 0.35f, 0.55f), Vector3.up, true);
+            GoreBuilder.Puddle(root, kit, rng, new Vector3(floor.x, 0f, floor.z), R(rng, 0.3f, 0.45f), Vector3.up, true);
+            return body.TransformPoint(Vector3.Lerp(chest, head, 0.5f));
         }
 
         /// <summary>A skull-shaped head of muscle with lidless eyes and lipless teeth, crown along up, face along face.</summary>

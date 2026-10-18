@@ -8,11 +8,12 @@ using Random = System.Random;
 namespace ScareSystem
 {
     /// <summary>
-    /// Fills an office with what the Babaika left behind: heaps of guts in pools of blood on the floor, a smear
-    /// dragged towards the far door, guts and blood on a few desks, splashes on the floor, desks and walls.
-    /// Built in code from a <see cref="Kit"/>. Positions are in office space: x 0..8 across from the west wall,
-    /// z 0..12 from the entrance wall; desks are found by name. Nothing blocks the way; the bloody floor has
-    /// trigger patches (<see cref="FootstepSurface"/>) so steps there squelch.
+    /// Fills an office with what the Babaika left behind: the people who worked there, flayed, still in their
+    /// chairs (<see cref="FlayedBody"/>), blood on the floor, a few desks and the walls, a smear dragged towards the
+    /// far door, and, if asked for, heaps and mountains of guts. Built in code from a <see cref="Kit"/>. Positions
+    /// are in office space: x 0..8 across from the west wall, z 0..12 from the entrance wall; desks are found by
+    /// name. Nothing blocks the way; the bloody floor has trigger patches (<see cref="FootstepSurface"/>) so steps
+    /// there squelch.
     /// </summary>
     public static class GoreBuilder
     {
@@ -39,57 +40,55 @@ namespace ScareSystem
         static readonly HashSet<string> OwnNames = new HashSet<string> { "Gut", "Pool", "Smear", "Lump", "Muscle" };
         static Mesh quad;
 
-        /// <summary>Builds everything under <paramref name="room"/>; returns the point (world) the eye goes to first.</summary>
-        public static Vector3 Build(Transform room, Kit kit, Random rng)
+        /// <summary>
+        /// Builds everything under <paramref name="room"/>, with heaps and mountains of guts only if
+        /// <paramref name="guts"/>; returns the point (world) the eye goes to first.
+        /// </summary>
+        public static Vector3 Build(Transform room, Kit kit, Random rng, bool guts)
         {
             var root = new GameObject("Gore").transform;
             root.SetParent(room, false);
 
-            // In the middle of the aisle, straight ahead from the door, under the same warm light from above that marks
-            // anomalies, so the eye finds it at once.
-            var main = new Vector3(4.3f, 0f, 4.8f);
-            Heap(root, kit, rng, main, 0.6f);
-            LevelSystem.Prims.SpotLight("Gore_Light", root, main + Vector3.up * 2.75f, Vector3.down, 80f, 3.8f, 2.6f, new Color(1f, 0.82f, 0.6f), false);
-
-            // Mountains of guts along both sides of the aisle; the middle stays clear enough to see the way.
-            foreach (float z in new[] { 2.6f, 5.1f, 7.5f, 9.7f })
-                Mound(root, kit, rng, new Vector3(R(rng, 2.05f, 2.35f), 0f, z + R(rng, -0.3f, 0.3f)), R(rng, 0.6f, 0.8f));
-            foreach (float z in new[] { 3.9f, 6.3f, 8.7f, 10.9f })
-                Mound(root, kit, rng, new Vector3(R(rng, 5.65f, 5.95f), 0f, z + R(rng, -0.3f, 0.3f)), R(rng, 0.6f, 0.8f));
-
-            // Blood everywhere: wide pools between them, splashes, drag marks.
-            for (int i = 0; i < 6; i++)
-            {
-                var at = new Vector3(R(rng, 2.6f, 5.4f), 0f, R(rng, 2.2f, 11f));
-                float size = R(rng, 0.6f, 1.1f);
-                Pool(root, kit.pool, rng, at, size, 0.0015f);
-                Squelch(root, kit, at, size);
-            }
-            for (int i = 0; i < 40; i++)
-                Splat(root, kit.splatter, rng, new Vector3(R(rng, 1.7f, 6.3f), 0f, R(rng, 1.2f, 11.6f)), Vector3.up, R(rng, 0.1f, 0.5f));
-            Drag(root, kit, rng, new[] { main + new Vector3(-0.3f, 0f, 0.6f), new Vector3(3.3f, 0f, 7f), new Vector3(2.9f, 0f, 9.4f), new Vector3(2.2f, 0f, 11.4f) }, 0.4f);
-            Drag(root, kit, rng, new[] { new Vector3(5.6f, 0f, 6.3f), new Vector3(4.9f, 0f, 7.6f), new Vector3(4.6f, 0f, 9.6f), new Vector3(3.6f, 0f, 11.2f) }, 0.32f);
-            Drag(root, kit, rng, new[] { new Vector3(2.3f, 0f, 2.6f), new Vector3(3.2f, 0f, 3.4f), main + new Vector3(-0.4f, 0f, -0.3f) }, 0.3f);
-
-            Desk(root, kit, rng, room.Find("Workstations/Desk_W3"), true);
-            Desk(root, kit, rng, room.Find("Workstations/Desk_E3"), true);
-            foreach (var name in new[] { "Desk_W1", "Desk_W5", "Desk_E1", "Desk_E4" })
-                Desk(root, kit, rng, room.Find("Workstations/" + name), false);
-
-            // The people who worked here, still at their desks.
-            Sitter(root, kit, rng, room, "Desk_W2", FlayedBody.Pose.ThrownBack);
+            // The people who worked here, still at their desks. The first one has turned to face the door: under the
+            // same warm light from above that marks anomalies, the eye finds it at once.
+            var look = Sitter(root, kit, rng, room, "Desk_W2", FlayedBody.Pose.ThrownBack) ?? room.TransformPoint(new Vector3(4f, 1f, 5f));
             Sitter(root, kit, rng, room, "Desk_W3", FlayedBody.Pose.OnDesk);
             Sitter(root, kit, rng, room, "Desk_W4", FlayedBody.Pose.Slumped);
             Sitter(root, kit, rng, room, "Desk_E2", FlayedBody.Pose.OnDesk);
             Sitter(root, kit, rng, room, "Desk_E3", FlayedBody.Pose.ThrownBack);
             Sitter(root, kit, rng, room, "Desk_E5", FlayedBody.Pose.Slumped);
+            var light = root.InverseTransformPoint(look);
+            LevelSystem.Prims.SpotLight("Gore_Light", root, new Vector3(light.x, 2.75f, light.z), Vector3.down, 70f, 3.4f, 2.4f, new Color(1f, 0.82f, 0.6f), false);
 
-            // Splashes up the walls, where nothing stands in front of them.
-            Splat(root, kit.splatter, rng, new Vector3(8f, 1.55f, 3.2f), Vector3.left, 0.9f);
-            Splat(root, kit.splatter, rng, new Vector3(8f, 1.15f, 2.5f), Vector3.left, 0.45f);
-            Splat(root, kit.splatter, rng, new Vector3(8f, 2f, 3.9f), Vector3.left, 0.5f);
-            Splat(root, kit.splatter, rng, new Vector3(0f, 1.7f, 10.8f), Vector3.right, 0.8f);
-            Splat(root, kit.splatter, rng, new Vector3(0f, 1.1f, 11.4f), Vector3.right, 0.45f);
+            // Blood: a few pools, splashes, a smear dragged to the far door, some on desks and walls.
+            for (int i = 0; i < 3; i++)
+            {
+                var at = new Vector3(R(rng, 2.6f, 5.4f), 0f, R(rng, 2.5f, 10.5f));
+                float size = R(rng, 0.35f, 0.65f);
+                Pool(root, kit.pool, rng, at, size, 0.0015f);
+                Squelch(root, kit, at, size);
+            }
+            for (int i = 0; i < 16; i++)
+                Splat(root, kit.splatter, rng, new Vector3(R(rng, 1.8f, 6.2f), 0f, R(rng, 1.5f, 11.4f)), Vector3.up, R(rng, 0.1f, 0.35f));
+            Drag(root, kit, rng, new[] { new Vector3(2.4f, 0f, 3.6f), new Vector3(3.2f, 0f, 6.5f), new Vector3(2.9f, 0f, 9.4f), new Vector3(2.2f, 0f, 11.4f) }, 0.3f);
+            foreach (var name in new[] { "Desk_W1", "Desk_W5", "Desk_E1" })
+                Desk(root, kit, rng, room.Find("Workstations/" + name), false, guts);
+            Splat(root, kit.splatter, rng, new Vector3(8f, 1.55f, 3.2f), Vector3.left, 0.7f); // up the walls, where nothing stands in front
+            Splat(root, kit.splatter, rng, new Vector3(8f, 1.15f, 2.6f), Vector3.left, 0.35f);
+            Splat(root, kit.splatter, rng, new Vector3(0f, 1.7f, 10.8f), Vector3.right, 0.6f);
+
+            if (guts)
+            {
+                // A heap in the middle of the aisle and mountains along both sides; the middle stays clear enough.
+                Heap(root, kit, rng, new Vector3(4.3f, 0f, 4.8f), 0.6f);
+                foreach (float z in new[] { 2.6f, 5.1f, 7.5f, 9.7f })
+                    Mound(root, kit, rng, new Vector3(R(rng, 2.05f, 2.35f), 0f, z + R(rng, -0.3f, 0.3f)), R(rng, 0.6f, 0.8f));
+                foreach (float z in new[] { 3.9f, 6.3f, 8.7f, 10.9f })
+                    Mound(root, kit, rng, new Vector3(R(rng, 5.65f, 5.95f), 0f, z + R(rng, -0.3f, 0.3f)), R(rng, 0.6f, 0.8f));
+                Desk(root, kit, rng, room.Find("Workstations/Desk_W3"), true, true);
+                Desk(root, kit, rng, room.Find("Workstations/Desk_E3"), true, true);
+                Desk(root, kit, rng, room.Find("Workstations/Desk_E4"), false, true);
+            }
 
             // Everything above was built as new meshes (the shared splash quad and Unity's primitives aside).
             var owned = root.gameObject.AddComponent<OwnedMeshes>();
@@ -97,7 +96,7 @@ namespace ScareSystem
                 if (filter.sharedMesh != null && filter.sharedMesh != quad && OwnNames.Contains(filter.sharedMesh.name))
                     owned.meshes.Add(filter.sharedMesh);
 
-            return room.TransformPoint(main + Vector3.up * 0.25f);
+            return look;
         }
 
         // ------------------------------------------------------------------ pieces
@@ -177,16 +176,21 @@ namespace ScareSystem
             foreach (var point in Spline(new List<Vector3>(through), 2)) Squelch(root, kit, point, width);
         }
 
-        /// <summary>Guts on a desk; on the first one a strand slides over the edge onto the floor.</summary>
-        static void Desk(Transform root, Kit kit, Random rng, Transform desk, bool spill)
+        /// <summary>Blood on a desk; with guts a heap of them, and with spill a strand sliding over the edge to the floor.</summary>
+        static void Desk(Transform root, Kit kit, Random rng, Transform desk, bool spill, bool guts)
         {
             if (desk == null) return;
             // Desk space: x along the desk, +z away from the wall, the top at DeskTop.
             Vector3 P(float x, float y, float z) => root.InverseTransformPoint(desk.TransformPoint(new Vector3(x, y, z)));
             var up = root.InverseTransformDirection(desk.up);
 
-            Pool(root, kit.pool, rng, P(-0.3f, DeskTop, 0.5f), 0.26f, 0.003f, up);
+            Pool(root, kit.pool, rng, P(-0.3f, DeskTop, 0.5f), guts ? 0.26f : 0.2f, 0.003f, up);
             for (int k = 0; k < 3; k++) Splat(root, kit.splatter, rng, P(R(rng, -0.6f, 0.5f), DeskTop, R(rng, 0.25f, 0.7f)), up, R(rng, 0.08f, 0.2f));
+            if (!guts)
+            {
+                Pool(root, kit.pool, rng, P(0f, 0f, 0.95f), 0.14f, 0.002f); // drips off the front edge
+                return;
+            }
             float tube = 0.03f;
             Gut(root, GutTone(kit, rng), rng, Coil(rng, P(-0.36f, DeskTop, 0.48f), 0.17f, tube, 16, false), tube);
 
@@ -209,18 +213,18 @@ namespace ScareSystem
             }
         }
 
-        /// <summary>A flayed body in the chair of <paramref name="desk"/>.</summary>
-        static void Sitter(Transform root, Kit kit, Random rng, Transform room, string desk, FlayedBody.Pose pose)
+        /// <summary>A flayed body in the chair of <paramref name="desk"/>; returns its upper body (world), or null.</summary>
+        static Vector3? Sitter(Transform root, Kit kit, Random rng, Transform room, string desk, FlayedBody.Pose pose)
         {
             var d = room.Find("Workstations/" + desk);
             var chair = d != null ? d.Find("Chair") : null;
-            if (chair == null || kit.muscle == null) return;
+            if (chair == null || kit.muscle == null) return null;
             // Only the ones fallen onto the desk keep facing it; the rest have turned round towards the aisle.
             if (pose != FlayedBody.Pose.OnDesk) chair.Rotate(0f, 180f + R(rng, -25f, 25f), 0f, Space.World);
             // How far ahead of the chair the desk's front edge is.
             var inDesk = d.InverseTransformPoint(chair.position);
             var edge = chair.InverseTransformPoint(d.TransformPoint(new Vector3(inDesk.x, DeskTop, 0.775f)));
-            FlayedBody.Seat(root, kit, rng, chair, edge.z, pose);
+            return FlayedBody.Seat(root, kit, rng, chair, edge.z, pose);
         }
 
         /// <summary>A pool of blood for other builders; on the floor it can squelch underfoot.</summary>
