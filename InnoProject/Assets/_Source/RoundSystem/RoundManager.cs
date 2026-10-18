@@ -35,7 +35,7 @@ namespace RoundSystem
         [Tooltip("A wrong call sets the progress to 0. Off: takes Mistake Penalty off instead.")]
         public bool resetOnMistake = true;
         [Min(1)] public int mistakePenalty = 3;
-        [Range(0f, 1f)] public float anomalyChance = 0.8f;
+        [Range(0f, 1f)] public float anomalyChance = 0.7f;
         [Tooltip("With no progress yet the office is always normal, so the player can learn it.")]
         public bool normalRoomAtZero;
         [Tooltip("Chance that the corridor to the office takes one sideways jog (two more turns).")]
@@ -84,8 +84,16 @@ namespace RoundSystem
         /// anomalies. See <see cref="BeginRetreat"/>.
         /// </summary>
         public bool Retreating { get; private set; }
-        /// <summary>Optional rule from other systems: no anomaly at this progress (e.g. while a scripted event waits there).</summary>
-        public Predicate<int> ForbidAnomaly { get; set; }
+        /// <summary>
+        /// Rules from other systems, by progress: no anomaly in that office (a scripted event waits there or fills it).
+        /// One rule saying yes is enough.
+        /// </summary>
+        public readonly List<Predicate<int>> AnomalyBans = new List<Predicate<int>>();
+        /// <summary>
+        /// Rules from other systems, by progress: either way out of that office is right (its scene counts as an
+        /// anomaly or as decoration, the player's choice). Turning back still needs a look into the office first.
+        /// </summary>
+        public readonly List<Predicate<int>> FreeChoices = new List<Predicate<int>>();
 
         const float LineHalfWidth = 1.2f;
         const float SightSeconds = 0.25f, SightRange = 14f;
@@ -128,6 +136,15 @@ namespace RoundSystem
             StartRound();
         }
 
+        /// <summary>Straight to this progress, at the start of a fresh stage (scripted jumps, debugging a level).</summary>
+        public void JumpTo(int progress)
+        {
+            Progress = Mathf.Clamp(progress, 0, roundsToWin - 1);
+            Retreating = false;
+            MoveToStart();
+            StartRound();
+        }
+
         /// <summary>From now on every stage line takes one level off (down to the first) and stages stay normal.</summary>
         public void BeginRetreat() => Retreating = true;
 
@@ -146,7 +163,7 @@ namespace RoundSystem
         public bool SubmitDecision(bool reportedAnomaly)
         {
             if (Won) return false;
-            bool right = reportedAnomaly == HasAnomaly;
+            bool right = reportedAnomaly == HasAnomaly || FreeChoices.Exists(rule => rule(Progress));
             Progress = right ? Progress + 1 : resetOnMistake ? 0 : Mathf.Max(0, Progress - mistakePenalty);
             DecisionMade?.Invoke(right, Progress);
             onDecision.Invoke(right);
@@ -178,7 +195,7 @@ namespace RoundSystem
             string sign = Won ? Localization.Get("sign.exit") : Localization.Format("sign.round", Progress + 1);
             CurrentStage = StageBuilder.Build(transform, palette, roomPrefab, layout, Rng, sign, Won);
             bool mayHaveAnomaly = !Won && !Retreating && anomalies != null && !(normalRoomAtZero && Progress == 0)
-                                  && (ForbidAnomaly == null || !ForbidAnomaly(Progress));
+                                  && !AnomalyBans.Exists(rule => rule(Progress));
             if (mayHaveAnomaly && (!string.IsNullOrEmpty(forceAnomaly) || Rng.NextDouble() < anomalyChance))
                 CurrentAnomaly = AnomalyDirector.Spawn(anomalies.prefabs, CurrentStage.Room.transform, Rng, recent, forceAnomaly);
             if (CurrentAnomaly != null) CollectSamples(CurrentAnomaly.transform);

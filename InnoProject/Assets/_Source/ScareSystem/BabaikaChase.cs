@@ -15,8 +15,10 @@ namespace ScareSystem
     /// The one-time Babaika chase. On level <see cref="triggerLevel"/> the office is always normal; when its far
     /// door opens, the Babaika comes down from the corridor ceiling behind it (cutscene: the view turns to her and
     /// zooms in) and goes after the player, who has to run back to level <see cref="escapeLevel"/>.
-    /// She runs along the player's own track, so she takes the same doors and corners. A running player keeps her
-    /// right behind (<see cref="pressureGap"/>); one who walks or stops gets caught.
+    /// She runs along the player's own track, so she takes the same doors and corners. She presses harder level by
+    /// level: at first she keeps a few metres back (<see cref="pressureGapStart"/>, slower than walking at her
+    /// slowest), so a look back finds her coming; on the escape level a running player keeps her right behind
+    /// (<see cref="pressureGap"/>), and one who walks or stops gets caught.
     /// Escaped: on the escape level the office door slams shut behind the player and stays locked, and she throws
     /// herself at it so the door shakes. Caught: a screamer, then back to the first level with the doors as usual.
     /// Either way it does not happen again in this run. Sounds are slots of <see cref="sounds"/> (see the Sound*
@@ -61,9 +63,13 @@ namespace ScareSystem
         public float descendSpeed = 0.4f;
 
         [Header("Chase")]
-        [Tooltip("Gap she keeps behind a running player, metres along the track.")]
+        [Tooltip("Gap she keeps behind the player when the chase begins, metres along the track: far enough to be seen.")]
+        public float pressureGapStart = 4.5f;
+        [Tooltip("Gap she keeps behind a running player on the escape level.")]
         public float pressureGap = 1.2f;
-        [Tooltip("She never runs slower than this: faster than walking, slower than running.")]
+        [Tooltip("Her slowest pace when the chase begins: below walking, so only standing still lets her reach you.")]
+        public float minSpeedStart = 1.8f;
+        [Tooltip("Her slowest pace on the escape level: faster than walking, slower than running.")]
         public float minSpeed = 3f;
         public float maxSpeed = 6.5f;
         [Tooltip("Gap along the track at which she has the player.")]
@@ -97,7 +103,7 @@ namespace ScareSystem
             round.RoundStarted += OnRoundStarted;
             round.LineCrossed += OnLineCrossed;
             round.RunStarted += OnRunStarted;
-            round.ForbidAnomaly = progress => State == Phase.Waiting && progress + 1 == triggerLevel;
+            round.AnomalyBans.Add(NormalTriggerOffice);
         }
 
         void OnDisable()
@@ -106,10 +112,22 @@ namespace ScareSystem
             round.RoundStarted -= OnRoundStarted;
             round.LineCrossed -= OnLineCrossed;
             round.RunStarted -= OnRunStarted;
-            round.ForbidAnomaly = null;
+            round.AnomalyBans.Remove(NormalTriggerOffice);
         }
 
+        /// <summary>The office where she comes is always normal.</summary>
+        bool NormalTriggerOffice(int progress) => State == Phase.Waiting && progress + 1 == triggerLevel;
+
         // ------------------------------------------------------------------ round events
+
+        /// <summary>Debugging what comes after: ends the event at once, as if it had happened.</summary>
+        internal void SkipToDone()
+        {
+            StopAllCoroutines();
+            Cleanup();
+            fade = 0f;
+            State = Phase.Done;
+        }
 
         void OnRunStarted()
         {
@@ -158,7 +176,8 @@ namespace ScareSystem
             return local.x > 0f && local.x < OfficeRoomBuilder.Width && local.z > 0f && local.z < OfficeRoomBuilder.Length;
         }
 
-        static AutoDoor Door(Stage stage, string name)
+        /// <summary>The door of the stage's office whose frame is named <paramref name="name"/> ("Entrance_Door", "Exit_Door").</summary>
+        internal static AutoDoor Door(Stage stage, string name)
         {
             if (stage == null || stage.Room == null) return null;
             return stage.Room.GetComponentsInChildren<AutoDoor>(true).FirstOrDefault(d => d.transform.parent != null && d.transform.parent.name == name);
@@ -212,22 +231,9 @@ namespace ScareSystem
             BeginChase(room);
         }
 
-        /// <summary>Turns the player's view towards a point (yaw on the body, pitch on the head).</summary>
-        void TurnView(Vector3 target, float sharpness)
-        {
-            float k = 1f - Mathf.Exp(-sharpness * Time.deltaTime);
-            Vector3 to = target - view.transform.position;
-            Vector3 flat = Vector3.ProjectOnPlane(to, Vector3.up);
-            if (flat.sqrMagnitude > 1e-4f)
-                player.transform.rotation = Quaternion.Slerp(player.transform.rotation, Quaternion.LookRotation(flat, Vector3.up), k);
-            player.Pitch = Mathf.Lerp(player.Pitch, -Mathf.Atan2(to.y, flat.magnitude) * Mathf.Rad2Deg, k);
-        }
+        void TurnView(Vector3 target, float sharpness) => ScareView.TurnTowards(player, view, target, sharpness);
 
-        static float Smooth(float t)
-        {
-            t = Mathf.Clamp01(t);
-            return t * t * (3f - 2f * t);
-        }
+        static float Smooth(float t) => ScareView.Smooth(t);
 
         // ------------------------------------------------------------------ chase
 
@@ -267,7 +273,10 @@ namespace ScareSystem
 
             Vector3 position = babaika.transform.position;
             float gap = TrackLength(position, target);
-            float speed = Mathf.Clamp(player.Speed + 2.2f * (gap - pressureGap), minSpeed, maxSpeed);
+            float pressure = Pressure;
+            float gapGoal = Mathf.Lerp(pressureGapStart, pressureGap, pressure);
+            float slowest = Mathf.Lerp(minSpeedStart, minSpeed, pressure);
+            float speed = Mathf.Clamp(player.Speed + 2.2f * (gap - gapGoal), slowest, maxSpeed);
             if (chaseTime < 2f) speed = Mathf.Min(speed, 1.2f + 0.9f * chaseTime); // a moment to turn round and run
 
             float step = speed * dt;
@@ -298,17 +307,20 @@ namespace ScareSystem
                 return;
             }
 
-            float near = Mathf.InverseLerp(4f, pressureGap * 0.8f, gap);
+            float near = Mathf.InverseLerp(6f, pressureGap * 0.8f, gap); // by how close she really is
             if (heartbeat != null)
             {
                 heartbeat.volume = Mathf.Lerp(0.25f, 0.9f, near);
                 heartbeat.pitch = Mathf.Lerp(0.9f, 1.45f, near);
             }
             if (near > 0.6f) player.Shake(0.22f * near);
-            if (player.Speed < 3.2f && chaseTime > 1.5f) runHint = Mathf.Max(runHint, 1.5f);
+            if (player.Speed < 3.2f && chaseTime > 1.5f && gap < 3f) runHint = Mathf.Max(runHint, 1.5f);
 
             if (slamDoor != null && PastDoor()) Slam();
         }
+
+        /// <summary>How hard she presses: 0 on the level the chase began, 1 on the escape level.</summary>
+        float Pressure => Mathf.Clamp01((float)(triggerLevel - round.Level) / Mathf.Max(1, triggerLevel - escapeLevel));
 
         float TrackLength(Vector3 from, Vector3 target)
         {

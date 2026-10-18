@@ -134,6 +134,7 @@ GameObject:
   - component: {fileID: 64465228}
   - component: {fileID: 64465229}
   - component: {fileID: 64465230}
+  - component: {fileID: 64465231}
   m_Layer: 0
   m_Name: Game
   m_TagString: Untagged
@@ -175,7 +176,7 @@ MonoBehaviour:
   roundsToWin: 8
   resetOnMistake: 1
   mistakePenalty: 3
-  anomalyChance: 0.8
+  anomalyChance: 0.7
   normalRoomAtZero: 0
   corridorSideStepChance: 0
   seed: 0
@@ -274,6 +275,41 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 38ceaeacf65ed384cb6c00837eda6f16, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PauseSystem.PauseMenu
+--- !u!114 &64465231
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 64465223}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 44a1cc86ddc39a64c8e53c94115869bd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ScareSystem.GoreOffice
+  round: {fileID: 64465225}
+  chase: {fileID: 64465227}
+  player: {fileID: 836928932}
+  view: {fileID: 1940549239}
+  sounds: {fileID: 11400000, guid: 053f4f8458b5f4c4cad7b353e37e4dbe, type: 2}
+  ambience: {fileID: 64465229}
+  kit:
+    guts: {fileID: 2100000, guid: 129956b3db5d7264ea84ee358b8052f6, type: 2}
+    gutsDark: {fileID: 2100000, guid: 6dd1ad045f418064593670aac75aa9cb, type: 2}
+    organ: {fileID: 2100000, guid: 8e5ae2fe64c28f846a09722c9bb3548f, type: 2}
+    muscle: {fileID: 2100000, guid: 7a5d89c53cc62cb4aa5d266ce8390142, type: 2}
+    bone: {fileID: 2100000, guid: 73fc6f456d5b286449aacc0837587a14, type: 2}
+    pool: {fileID: 2100000, guid: 0f5b84a700e66664bb08742ba76bfa66, type: 2}
+    splatter: {fileID: 2100000, guid: 5e46246b3a40d02468b9bb3569c024b9, type: 2}
+    smear: {fileID: 2100000, guid: 9d0723ab6250af347bc62ed58d301841, type: 2}
+    steps:
+    - {fileID: 8300000, guid: 267b7cde8c2fe8a49b77dbfbb4d34b70, type: 3}
+    - {fileID: 8300000, guid: a064133206caa234bb6ada863b1c58f9, type: 3}
+    - {fileID: 8300000, guid: c1bc875e30395244ba74ea4276b1bd47, type: 3}
+    - {fileID: 8300000, guid: 9dc5d503e245e0f469afd77c35aa9a4c, type: 3}
+  level: 6
+  zoomFov: 46
+  flinch: 0.35
 --- !u!1001 &240252689
 PrefabInstance:
   m_ObjectHideFlags: 0
