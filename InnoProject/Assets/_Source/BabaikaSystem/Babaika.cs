@@ -16,7 +16,7 @@ namespace BabaikaSystem
     /// It has no AI. Scripts tell it where to go with <see cref="WalkTo"/>, <see cref="RunTo"/>, <see cref="Follow"/>
     /// and <see cref="Stand"/>, and the legs find floors, walls, ceilings and furniture by themselves.
     /// The transform is the centre of the head and goes exactly along the path. The model bobs, leans and
-    /// twitches on top of it.
+    /// twitches on top of it. With <see cref="bodyUp"/> pointing down it crawls upside down, hanging from a ceiling.
     /// </summary>
     [DisallowMultipleComponent]
     public class Babaika : MonoBehaviour
@@ -28,6 +28,8 @@ namespace BabaikaSystem
         public float acceleration = 9f;
         [Tooltip("Degrees per second when turning towards where it goes.")]
         public float turnSpeed = 320f;
+        [Tooltip("Which way is up for the body. Down: legs up to the ceiling, the head hanging under it.")]
+        public Vector3 bodyUp = Vector3.up;
 
         [Header("Body")]
         [Tooltip("The visible model under this transform. It bobs and leans while the root follows the path.")]
@@ -65,7 +67,7 @@ namespace BabaikaSystem
         Vector3 modelPosition;
         Quaternion modelRotation = Quaternion.identity;
         Quaternion jawRotation = Quaternion.identity;
-        float phase, lean, jawAngle, twitchTimer;
+        float phase, lean, lookPitch, jawAngle, twitchTimer;
         Vector3 twitch, twitchGoal;
 
         void Awake()
@@ -145,7 +147,10 @@ namespace BabaikaSystem
             Teleported?.Invoke();
         }
 
-        /// <summary>Turns to face a point while standing (for example the player). Moving overrides it.</summary>
+        /// <summary>
+        /// Turns to face a point while standing (for example the player), the head tipped up or down to it. Moving
+        /// overrides it.
+        /// </summary>
         public void LookAt(Vector3 point) => lookTarget = point;
 
         public void StopLooking() => lookTarget = null;
@@ -232,13 +237,16 @@ namespace BabaikaSystem
         /// <summary>Turns towards where it goes, or to the look target while it stands or is steered by a script.</summary>
         void Face(Vector3 position, float dt)
         {
-            bool look = lookTarget.HasValue && (driven || Velocity.sqrMagnitude <= 0.04f);
-            Vector3 facing = look ? lookTarget.Value - position : Velocity.sqrMagnitude > 0.04f ? Velocity : Vector3.zero;
-            facing = Vector3.ProjectOnPlane(facing, Vector3.up);
+            Vector3 up = bodyUp.sqrMagnitude > 1e-4f ? bodyUp.normalized : Vector3.up;
+            Vector3 facing = Looking ? lookTarget.Value - position : Velocity.sqrMagnitude > 0.04f ? Velocity : Vector3.zero;
+            facing = Vector3.ProjectOnPlane(facing, up);
+            if (facing.sqrMagnitude < 1e-4f) facing = Vector3.ProjectOnPlane(transform.forward, up); // keeps the body upright (or hanging)
             if (facing.sqrMagnitude < 1e-4f) return;
-            var goal = Quaternion.LookRotation(facing.normalized, Vector3.up);
+            var goal = Quaternion.LookRotation(facing.normalized, up);
             transform.rotation = Quaternion.RotateTowards(transform.rotation, goal, turnSpeed * dt);
         }
+
+        bool Looking => lookTarget.HasValue && (driven || Velocity.sqrMagnitude <= 0.04f);
 
         void AnimateBody(float dt)
         {
@@ -250,6 +258,14 @@ namespace BabaikaSystem
                 Vector3 local = transform.InverseTransformDirection(Velocity);
                 float leanGoal = runSpeed > 0f ? Mathf.Clamp(local.z / runSpeed, -1f, 1f) * runLean : 0f;
                 lean = Mathf.Lerp(lean, leanGoal, 1f - Mathf.Exp(-6f * dt));
+                // Tipped up or down to what it looks at (the body itself only turns round its up axis).
+                float pitchGoal = 0f;
+                if (Looking)
+                {
+                    Vector3 to = transform.InverseTransformDirection(lookTarget.Value - transform.position);
+                    pitchGoal = Mathf.Clamp(-Mathf.Atan2(to.y, Mathf.Max(0.05f, to.z)) * Mathf.Rad2Deg, -70f, 70f);
+                }
+                lookPitch = Mathf.Lerp(lookPitch, pitchGoal, 1f - Mathf.Exp(-5f * dt));
 
                 twitchTimer -= dt;
                 if (twitchTimer <= 0f)
@@ -264,7 +280,8 @@ namespace BabaikaSystem
                 float sway = Mathf.Sin(phase * Mathf.PI) * Mathf.Lerp(2f, 6f, pace);
                 Vector3 fit = screamTime > 0f ? UnityEngine.Random.insideUnitSphere * 7f : Vector3.zero;
                 model.localPosition = modelPosition + Vector3.up * bob;
-                model.localRotation = modelRotation * Quaternion.Euler(lean + twitch.x + fit.x, twitch.y + fit.y, sway + twitch.z + fit.z);
+                model.localRotation = Quaternion.AngleAxis(lookPitch, Vector3.right) * modelRotation
+                                      * Quaternion.Euler(lean + twitch.x + fit.x, twitch.y + fit.y, sway + twitch.z + fit.z);
             }
             screamTime = Mathf.Max(0f, screamTime - dt);
 

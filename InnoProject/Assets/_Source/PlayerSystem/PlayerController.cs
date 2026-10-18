@@ -42,6 +42,8 @@ namespace PlayerSystem
         /// <summary>Scripted walking instead of the player's keys (cutscenes, tests): x = strafe, y = forward.</summary>
         [System.NonSerialized] public Vector2? scriptedMove;
         [System.NonSerialized] public bool scriptedRun;
+        /// <summary>Lowers the eyes by this much, metres (crouching behind cover, see <see cref="PlayerHide"/>).</summary>
+        [System.NonSerialized] public float headDrop;
 
         /// <summary>Up/down look angle in degrees (positive looks down).</summary>
         public float Pitch
@@ -182,7 +184,7 @@ namespace PlayerSystem
             }
             bobWeight = Mathf.MoveTowards(bobWeight, walking ? 1f : 0f, Time.deltaTime * 4f);
             if (head != null)
-                head.localPosition = headRest + Vector3.down * (Mathf.Abs(Mathf.Sin(Mathf.PI * travelled / stepLength)) * bobHeight * bobWeight);
+                head.localPosition = headRest + Vector3.down * (Mathf.Abs(Mathf.Sin(Mathf.PI * travelled / stepLength)) * bobHeight * bobWeight + headDrop);
         }
 
         void Step()
