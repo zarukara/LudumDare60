@@ -31,7 +31,7 @@ namespace LevelSystem
             textMesh = GetComponent<TextMesh>();
             meshRenderer = GetComponent<MeshRenderer>();
             if (textMesh.font == null) textMesh.font = DefaultFont;
-            if (!string.IsNullOrEmpty(textMesh.text))
+            if (textMesh.font.dynamic && !string.IsNullOrEmpty(textMesh.text))
                 textMesh.font.RequestCharactersInTexture(textMesh.text, textMesh.fontSize, textMesh.fontStyle);
             bound = textMesh.font.material.mainTexture;
             boundText = textMesh.text;

@@ -42,6 +42,7 @@ namespace LevelSystem
         public Material signPanel;
         public Material exitSign;
         public Material text;
+        public Font whiteboardFont;
 
         [Header("Decor")]
         public Material leaves;

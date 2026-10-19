@@ -119,6 +119,7 @@ namespace LevelSystem.EditorTools
             palette.signPanel = Mat("Sign_Panel", "#1C1E22", 0.5f);
             palette.exitSign = Mat("Exit_Sign", "#19A447", 0.5f, emission: new Color(0.1f, 0.85f, 0.3f) * 1.5f);
             palette.text = TextMaterial();
+            palette.whiteboardFont = AssetDatabase.LoadAssetAtPath<Font>("Assets/_Presentation/Fonts/Excalifont-Regular.ttf");
 
             palette.leaves = Mat("Leaves", "#3E6E38", 0.2f);
             palette.pot = Mat("Pot", "#3A3B3F", 0.35f);
