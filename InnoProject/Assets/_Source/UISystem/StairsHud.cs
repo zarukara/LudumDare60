@@ -8,11 +8,7 @@ using UnityEngine.UI;
 
 namespace UISystem
 {
-    /// <summary>
-    /// The stairwell's on-screen bits in the VCR look (<see cref="VhsUi"/>): what E would do now (hide behind the
-    /// cart, get out), the hunt's hints one under another, and the hold-your-breath bar: a row of segments with the
-    /// lit zone and the running marker to catch with Space, or, while the breath is held, how much of it is left.
-    /// </summary>
+
     public class StairsHud : MonoBehaviour
     {
         public StairsHunt hunt;
@@ -33,7 +29,7 @@ namespace UISystem
         {
             var root = VhsUi.NewCanvas("Stairs_HUD", transform, 20);
             hint = VhsUi.Label(root, null, "", 46, TextAnchor.UpperCenter, new Vector2(0f, -120f), VhsUi.Bright);
-            hint.verticalOverflow = VerticalWrapMode.Overflow; // a line per hint
+            hint.verticalOverflow = VerticalWrapMode.Overflow;
             caption = VhsUi.Label(root, null, "", 32, TextAnchor.MiddleCenter, new Vector2(0f, -292f), VhsUi.Bright);
             bar = new GameObject("Breath_Bar", typeof(RectTransform)).GetComponent<RectTransform>();
             bar.SetParent(root, false);
@@ -75,7 +71,6 @@ namespace UISystem
             label.text = key != null ? Localization.Get(key) : "";
         }
 
-        /// <summary>The hints one per line; the text is rebuilt only when they change.</summary>
         void ShowHints(IReadOnlyList<string> keys)
         {
             int count = keys != null ? keys.Count : 0;
@@ -92,7 +87,6 @@ namespace UISystem
             hint.text = string.Join("\n", lines);
         }
 
-        /// <summary>Catching: the zone green, the marker bright (the zone blinks red when time is nearly up). Holding: the breath left.</summary>
         void Paint(BreathHold breath)
         {
             bool flash = Time.time - breath.LastCatch < 0.15f;

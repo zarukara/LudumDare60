@@ -18,13 +18,7 @@ using Object = UnityEngine.Object;
 
 namespace LevelSystem.EditorTools
 {
-    /// <summary>
-    /// Office menu: generates the textures, materials and palette, the office prefab, the anomaly prefabs and the
-    /// Office scene (player, round logic, post-processing, VHS camera). Assets go to Assets/_Presentation/Office,
-    /// the anomalies to Assets/_Presentation/Anomalies, the scene to Assets/_Presentation/Scenes/Office.unity.
-    /// Re-running updates the materials and the office; existing anomaly prefabs are kept (they may have been
-    /// edited), and the scene is only created once unless "Recreate Scene" is used.
-    /// </summary>
+
     public static class OfficeMenu
     {
         const string Root = "Assets/_Presentation/Office";
@@ -51,7 +45,6 @@ namespace LevelSystem.EditorTools
         [MenuItem("Office/Recreate Menu Scene")]
         public static void RecreateMenuScene() => BuildMenuScene(true);
 
-        /// <summary>Menu scene (language choice, Play) and both scenes in Build Settings, the menu first.</summary>
         public static void BuildMenuScene(bool overwrite)
         {
             if (overwrite || !File.Exists(MenuScenePath))
@@ -81,8 +74,6 @@ namespace LevelSystem.EditorTools
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(RoomPrefabPath) ?? BuildRoomPrefab(palette);
             BuildScene(palette, prefab, BuildAnomalyPrefabs(palette), true);
         }
-
-        // ------------------------------------------------------------------ palette
 
         public static OfficePalette BuildPalette()
         {
@@ -166,7 +157,7 @@ namespace LevelSystem.EditorTools
             palette.dialGlow = Mat("Old_Dial_Glow", "#F2B45A", 0.5f, emission: new Color(1f, 0.62f, 0.22f) * 1.4f);
             palette.recLamp = Mat("Old_Rec_Lamp", "#FF2A2A", 0.5f, emission: new Color(1f, 0.08f, 0.06f) * 2.5f);
             palette.vhs = LoadOrCreate("VHS", Shader.Find("Office/VHS"));
-            // Light touch: the tape look must not hide what is on the desks, and the faults must not twitch.
+
             palette.vhs.SetFloat("_Noise", 0.02f);
             palette.vhs.SetFloat("_Bleed", 1.2f);
             palette.vhs.SetFloat("_Jitter", 0.0003f);
@@ -205,10 +196,6 @@ namespace LevelSystem.EditorTools
             return m;
         }
 
-        /// <summary>
-        /// URP keeps _EMISSION only while the material's GI flags say it is emissive (its material validation
-        /// switches the keyword off otherwise), so the flag matters, not just the keyword.
-        /// </summary>
         static void Emissive(Material m, Color color)
         {
             m.SetColor("_EmissionColor", color);
@@ -216,7 +203,6 @@ namespace LevelSystem.EditorTools
             m.EnableKeyword("_EMISSION");
         }
 
-        /// <summary>Self-lit picture: dark base so the room light barely touches it, the image in the emission.</summary>
         static Material Screen(string name, Texture2D texture, float brightness)
         {
             var m = Mat(name, "#1A1A1A", 0.8f, texture: texture);
@@ -263,8 +249,6 @@ namespace LevelSystem.EditorTools
             m.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
             m.renderQueue = (int)RenderQueue.Transparent;
         }
-
-        // ------------------------------------------------------------------ textures (drawn in code, saved as PNG)
 
         static Texture2D CarpetTexture()
         {
@@ -365,7 +349,6 @@ namespace LevelSystem.EditorTools
             }, FilterMode.Bilinear, false);
         }
 
-        /// <summary>Night city far away: dark sky, a few stars, black towers with some lit windows.</summary>
         static Texture2D NightViewTexture()
         {
             var random = new System.Random(10);
@@ -395,7 +378,6 @@ namespace LevelSystem.EditorTools
             }, FilterMode.Bilinear, false);
         }
 
-        /// <summary>Snow on an old TV with no signal.</summary>
         static Texture2D TvStaticTexture()
         {
             var random = new System.Random(12);
@@ -408,12 +390,11 @@ namespace LevelSystem.EditorTools
             }, FilterMode.Point, false);
         }
 
-        /// <summary>Green-on-black text-mode screen for the old CRT monitor.</summary>
         static Texture2D TerminalTexture()
         {
             var random = new System.Random(9);
             Color background = Hex("#06120A"), glyph = Hex("#4CFF7A"), dim = Hex("#1F6B35");
-            // Every text row gets a random line length; the glyphs are 3x5 blocks with gaps.
+
             var lengths = new int[12];
             for (int i = 0; i < lengths.Length; i++) lengths[i] = random.Next(4, 28);
             var cells = new bool[128 * 96];
@@ -422,7 +403,7 @@ namespace LevelSystem.EditorTools
             {
                 int row = (95 - y) / 8, inRow = (95 - y) % 8, col = (x - 4) / 4, inCol = (x - 4) % 4;
                 if (x < 4 || row >= lengths.Length || col >= lengths[row] || inRow < 2 || inCol == 3) return background;
-                if (row == lengths.Length - 1 && col == 0) return glyph; // cursor
+                if (row == lengths.Length - 1 && col == 0) return glyph;
                 return cells[y * 128 + x] ? (row == 0 ? glyph : Color.Lerp(dim, glyph, 0.7f)) : background;
             }, FilterMode.Bilinear, false);
         }
@@ -434,7 +415,7 @@ namespace LevelSystem.EditorTools
             {
                 float dx = x - 63.5f, dy = y - 63.5f, r = Mathf.Sqrt(dx * dx + dy * dy);
                 if (r > 61f) return tick;
-                float angle = Mathf.Atan2(dx, dy) * Mathf.Rad2Deg; // 0 at 12 o'clock
+                float angle = Mathf.Atan2(dx, dy) * Mathf.Rad2Deg;
                 float toHour = Mathf.Abs(Mathf.DeltaAngle(angle, Mathf.Round(angle / 30f) * 30f)) * Mathf.Deg2Rad * r;
                 float toMinute = Mathf.Abs(Mathf.DeltaAngle(angle, Mathf.Round(angle / 6f) * 6f)) * Mathf.Deg2Rad * r;
                 bool quarter = Mathf.Abs(Mathf.DeltaAngle(angle, Mathf.Round(angle / 90f) * 90f)) < 5f;
@@ -493,7 +474,6 @@ namespace LevelSystem.EditorTools
             }, FilterMode.Bilinear, false);
         }
 
-        /// <summary>Draws a texture pixel by pixel (y = 0 is the bottom row) into Textures/{file}.png and imports it.</summary>
         static Texture2D Texture(string file, int width, int height, Func<int, int, Color> pixel, FilterMode filter = FilterMode.Bilinear, bool repeat = true)
         {
             string path = $"{Root}/Textures/{file}.png";
@@ -527,8 +507,6 @@ namespace LevelSystem.EditorTools
             return c;
         }
 
-        // ------------------------------------------------------------------ room prefab
-
         public static GameObject BuildRoomPrefab(OfficePalette palette)
         {
             EnsureFolder(Root + "/Prefabs");
@@ -547,7 +525,6 @@ namespace LevelSystem.EditorTools
             }
         }
 
-        /// <summary>The generated meshes must live in an asset for a prefab to keep them.</summary>
         static void SaveMeshes(GameObject root, string path)
         {
             var meshes = root.GetComponentsInChildren<MeshFilter>(true).Select(f => f.sharedMesh)
@@ -558,24 +535,18 @@ namespace LevelSystem.EditorTools
             AssetDatabase.SaveAssets();
         }
 
-        // ------------------------------------------------------------------ anomaly prefabs
-
-        /// <summary>
-        /// Makes a prefab for every old-tech anomaly that does not have one yet (existing ones are left alone) and
-        /// returns the library that lists the anomalies folder. Each prefab's pose is its place in the office.
-        /// </summary>
         public static AnomalyLibrary BuildAnomalyPrefabs(OfficePalette palette, bool overwrite = false)
         {
             EnsureFolder(AnomalyFolder);
             EnsureFolder(Root + "/Meshes");
-            var office = OfficeRoomBuilder.Build(palette); // the office stands at the origin while the models are placed
+            var office = OfficeRoomBuilder.Build(palette);
             try
             {
                 foreach (var spec in OfficeRoomBuilder.AnomalySpecs)
                 {
                     string path = $"{AnomalyFolder}/{spec.File}.prefab";
                     if (File.Exists(path) && !overwrite) continue;
-                    Prims.ClearCache(); // fresh meshes, so this prefab depends on nothing but its own mesh asset
+                    Prims.ClearCache();
                     var model = spec.Build(office.transform, palette);
                     model.SetParent(null, true);
                     model.name = spec.File;
@@ -607,10 +578,6 @@ namespace LevelSystem.EditorTools
         internal static readonly Color HighlightColor = new Color(1f, 0.13f, 0.08f);
         internal const float HighlightIntensity = 4.5f;
 
-        /// <summary>
-        /// A red spot shining down on the object from just under the ceiling, so it stands out in the dark office
-        /// (a spot, not a point light: no glowing patch on the ceiling to give the place away).
-        /// </summary>
         internal static void AddHighlight(Transform model)
         {
             var renderers = model.GetComponentsInChildren<Renderer>();
@@ -633,14 +600,11 @@ namespace LevelSystem.EditorTools
             light.shadows = LightShadows.None;
         }
 
-        // ------------------------------------------------------------------ scene
-
         public static void BuildScene(OfficePalette palette, GameObject roomPrefab, AnomalyLibrary library, bool overwrite)
         {
             if (!overwrite && File.Exists(ScenePath)) return;
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
-            // Night: almost no ambient light, the lamps and screens do the work.
             RenderSettings.skybox = null;
             RenderSettings.ambientMode = AmbientMode.Flat;
             RenderSettings.ambientLight = new Color(0.035f, 0.04f, 0.05f);
@@ -703,14 +667,8 @@ namespace LevelSystem.EditorTools
             EditorSceneManager.SaveScene(scene, ScenePath);
         }
 
-        // ------------------------------------------------------------------ player body
-
         const string PlayerFolder = "Assets/_Presentation/Player";
 
-        /// <summary>
-        /// Brings an existing Office scene up to date: first-person body, torch sounds, Babaika chase, pause with its
-        /// settings screen, ambience.
-        /// </summary>
         [MenuItem("Office/Upgrade Open Scene")]
         public static void UpgradeOpenScene()
         {
@@ -718,7 +676,7 @@ namespace LevelSystem.EditorTools
             var round = Object.FindFirstObjectByType<RoundManager>();
             if (controller == null || round == null)
             {
-                Debug.LogWarning("Open the Office scene first (it needs a PlayerController and a RoundManager).");
+
                 return;
             }
             var flashlight = controller.GetComponentInChildren<Flashlight>();
@@ -734,7 +692,6 @@ namespace LevelSystem.EditorTools
 
         const string AmbienceFolder = "Assets/_Presentation/Sounds/Ambience";
 
-        /// <summary>The level-driven ambience on the round's object, its stages being the loops in the Ambience folder by name.</summary>
         public static Ambience AddAmbience(RoundManager round)
         {
             var ambience = round.GetComponent<Ambience>();
@@ -749,10 +706,6 @@ namespace LevelSystem.EditorTools
             return ambience;
         }
 
-        /// <summary>
-        /// The first-person body under the player (a little behind the camera) and the torch hand under the camera,
-        /// from the Blockbench models in the Player folder. Replaces earlier ones.
-        /// </summary>
         public static void AddPlayerBody(PlayerController controller, Flashlight flashlight)
         {
             var bodyPrefab = ModelPrefab(PlayerFolder, "PlayerBody", 0.12f, root => root.AddComponent<PlayerBody>());
@@ -777,17 +730,13 @@ namespace LevelSystem.EditorTools
             EditorUtility.SetDirty(flashlight);
         }
 
-        /// <summary>
-        /// Prefab for a Blockbench model: an empty root (with optional components) over the FBX, whose palette material
-        /// is remapped to a URP Lit material next to it.
-        /// </summary>
         static GameObject ModelPrefab(string folder, string name, float smoothness, Action<GameObject> setup)
         {
             string fbxPath = $"{folder}/{name}.fbx", prefabPath = $"{folder}/{name}.prefab", matPath = $"{folder}/{name}.mat";
             var model = AssetDatabase.LoadAssetAtPath<GameObject>(fbxPath);
             if (model == null)
             {
-                Debug.LogWarning($"{fbxPath} is missing (export it from Blockbench first).");
+
                 return null;
             }
             var mat = AssetDatabase.LoadAssetAtPath<Material>(matPath);
@@ -817,7 +766,6 @@ namespace LevelSystem.EditorTools
         const string DoorSounds = "Assets/_Presentation/Sounds/Doors";
         const string FlashlightSounds = "Assets/_Presentation/Sounds/Flashlight";
 
-        /// <summary>The torch's switch sounds from the Flashlight sounds folder.</summary>
         public static void ConfigureFlashlight(Flashlight flashlight)
         {
             if (flashlight == null) return;
@@ -826,7 +774,6 @@ namespace LevelSystem.EditorTools
             EditorUtility.SetDirty(flashlight);
         }
 
-        /// <summary>Carpet steps in the offices, hard-floor steps elsewhere (samples from the Footsteps folder).</summary>
         public static void ConfigureFootsteps(PlayerController player, OfficePalette palette)
         {
             AudioClip[] Clips(string kind) => AssetDatabase.FindAssets("t:AudioClip " + kind, new[] { FootstepsFolder })
@@ -867,7 +814,7 @@ namespace LevelSystem.EditorTools
             var vignette = Get<Vignette>();
             vignette.intensity.Override(0.38f);
             vignette.smoothness.Override(0.5f);
-            Get<FilmGrain>().active = false; // the VHS camera has its own grain
+            Get<FilmGrain>().active = false;
             var color = Get<ColorAdjustments>();
             color.saturation.Override(-20f);
             color.contrast.Override(12f);

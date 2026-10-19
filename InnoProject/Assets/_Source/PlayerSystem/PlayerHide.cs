@@ -5,11 +5,7 @@ using UnityEngine.InputSystem;
 
 namespace PlayerSystem
 {
-    /// <summary>
-    /// Hiding behind cover (<see cref="HidingSpot"/>): stand next to it, or look at it from close by, and press E
-    /// (gamepad X) to crouch down behind it, E again to get up and step out. While hidden the player cannot walk but
-    /// can look round and peek over the cover. <see cref="PromptKey"/> says what E would do now, for the HUD.
-    /// </summary>
+
     [RequireComponent(typeof(PlayerController))]
     public class PlayerHide : MonoBehaviour
     {
@@ -23,15 +19,13 @@ namespace PlayerSystem
         [Tooltip("Off: E does nothing (cutscenes, scares).")]
         public bool allowed = true;
 
-        /// <summary>Crouched behind cover (not while still getting there).</summary>
         public bool Hidden { get; private set; }
-        /// <summary>Crouching down or getting up just now.</summary>
+
         public bool Moving { get; private set; }
         public HidingSpot Spot { get; private set; }
-        /// <summary>The cover E would hide behind now, or null.</summary>
+
         public HidingSpot Aimed { get; private set; }
 
-        /// <summary>Localization key of what E would do now, or null.</summary>
         public string PromptKey => !allowed || Moving || !isActiveAndEnabled ? null : Hidden ? "hint.unhide" : Aimed != null ? "hint.hide" : null;
 
         PlayerController walker;
@@ -66,14 +60,13 @@ namespace PlayerSystem
                 if (aimed != null) return aimed;
             }
 
-            // Low cover is easy to look past: standing right by it and roughly facing it is enough.
             Vector3 feet = transform.position, facing = Vector3.ProjectOnPlane(t.forward, Vector3.up);
             HidingSpot best = null;
             float bestDistance = nearReach;
             foreach (var spot in HidingSpot.All)
             {
                 Vector3 closest = spot.ClosestPoint(feet + Vector3.up * 0.3f);
-                if (Mathf.Abs(closest.y - feet.y) > 1.2f) continue; // another floor
+                if (Mathf.Abs(closest.y - feet.y) > 1.2f) continue;
                 Vector3 to = Vector3.ProjectOnPlane(closest - feet, Vector3.up);
                 float distance = to.magnitude;
                 if (distance > bestDistance || (distance > 0.25f && Vector3.Angle(facing, to) > 75f)) continue;
@@ -92,7 +85,7 @@ namespace PlayerSystem
             Vector3 from = transform.position, to = spot.seat != null ? spot.seat.position : from;
             to.y = from.y;
             float yawFrom = transform.eulerAngles.y, yawTo = spot.seat != null ? spot.seat.eulerAngles.y : yawFrom, pitchFrom = walker.Pitch;
-            // Eyes just over the edge, or straight out through a closet's gap.
+
             yield return Glide(from, to, yawFrom, yawTo, pitchFrom, spot.Enclosed ? 0f : -5f, 0f, spot.eyeDrop, spot);
             walker.canLook = true;
             Hidden = true;
@@ -112,7 +105,6 @@ namespace PlayerSystem
             Moving = false;
         }
 
-        /// <summary>Moves the player in or out; a closet's doors swing open on the way and shut behind them.</summary>
         IEnumerator Glide(Vector3 from, Vector3 to, float yawFrom, float yawTo, float pitchFrom, float pitchTo, float dropFrom, float dropTo, HidingSpot spot)
         {
             body.enabled = false;
@@ -133,7 +125,6 @@ namespace PlayerSystem
             body.enabled = true;
         }
 
-        /// <summary>Up at once where the player is (a scare takes over). Walking and looking are left to the caller.</summary>
         public void Release()
         {
             StopAllCoroutines();

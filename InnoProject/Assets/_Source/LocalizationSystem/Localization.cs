@@ -10,10 +10,6 @@ namespace LocalizationSystem
         English,
     }
 
-    /// <summary>
-    /// The game's texts in Russian and English. The choice is made in the menu and kept in PlayerPrefs.
-    /// Add a key to <see cref="Table"/> and use <see cref="Get"/> or a <see cref="LocalizedText"/> component.
-    /// </summary>
     public static class Localization
     {
         const string PrefKey = "language";
@@ -62,7 +58,6 @@ namespace LocalizationSystem
 
         static Language? current;
 
-        /// <summary>Fired after the language changes, so texts on screen can update.</summary>
         public static event Action Changed;
 
         public static Language Current

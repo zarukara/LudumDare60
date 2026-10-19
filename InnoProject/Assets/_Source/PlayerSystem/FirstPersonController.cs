@@ -1,4 +1,3 @@
-
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -84,6 +83,12 @@ namespace PlayerSystem
 
         private void HandleMovement()
         {
+            if (!_characterController.enabled)
+            {
+                _verticalVelocity = 0f;
+                return;
+            }
+
             Vector2 moveInput = _moveAction.action.ReadValue<Vector2>();
 
             Vector3 direction =

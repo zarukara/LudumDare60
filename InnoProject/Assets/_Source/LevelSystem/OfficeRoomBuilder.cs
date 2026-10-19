@@ -6,20 +6,12 @@ using UnityEngine;
 
 namespace LevelSystem
 {
-    /// <summary>
-    /// The office from the design sketch at night: 8 x 12 m, entrance in the south wall on the right, exit in the
-    /// north wall on the left, six workstations along the west wall and five along the east wall, a bookcase in the
-    /// north-west corner, a copier by the east wall and a big plant by the entrance. Only two ceiling lights are on;
-    /// the rest of the light comes from the monitors, two desk lamps and the exit sign. Local space: origin at the
-    /// inner south-west corner on the floor, +Z towards the exit.
-    /// The anomalies are separate prefabs (see <see cref="AnomalySpecs"/>) that the round spawns into the office.
-    /// </summary>
+
     public static class OfficeRoomBuilder
     {
         public const float Width = 8f, Length = 12f, Height = 2.9f, Wall = 0.2f;
         public const float DoorWidth = 1f, DoorHeight = 2.1f;
 
-        /// <summary>Door centres along X; the corridors attach here (they must match StageLayout's cells).</summary>
         public const float EntranceX = 6f, ExitX = 2f;
 
         const float DeskPitch = 1.55f, PartitionDepth = 1.6f, WindowWidth = 1.5f, SillHeight = 1f, WindowTop = 2.3f, DeskTop = 0.75f;
@@ -28,7 +20,7 @@ namespace LevelSystem
         static readonly float[] WestWindows = { 2.35f, 5.45f, 8.55f };
         static readonly float[] EastWindows = { 6.325f, 9.425f };
 
-        static readonly Color RoomLight = new Color(0.85f, 0.95f, 0.88f);  // tired fluorescent tube
+        static readonly Color RoomLight = new Color(0.85f, 0.95f, 0.88f);
         static readonly Color Moonlight = new Color(0.5f, 0.6f, 1f);
         static readonly Color ScreenGlow = new Color(0.45f, 0.62f, 1f);
         static readonly Color LampGlow = new Color(1f, 0.72f, 0.42f);
@@ -57,12 +49,10 @@ namespace LevelSystem
             return root.gameObject;
         }
 
-        // ------------------------------------------------------------------ walls, doors, windows
-
         static void Shell(Transform shell, OfficePalette p)
         {
             Prims.Box("Floor", shell, new Vector3(Width / 2f, -0.05f, Length / 2f), new Vector3(Width + 2f * Wall, 0.1f, Length + 2f * Wall), p.carpet);
-            const float top = Height + 0.1f; // walls run up into the ceiling slab
+            const float top = Height + 0.1f;
             WallPieces(shell, p.wall, "Wall_South", true, -Wall / 2f, -Wall, Width + Wall, top, Wall, new List<Opening> { DoorOpening(EntranceX) });
             WallPieces(shell, p.wall, "Wall_North", true, Length + Wall / 2f, -Wall, Width + Wall, top, Wall, new List<Opening> { DoorOpening(ExitX) });
             WallPieces(shell, p.wall, "Wall_West", false, -Wall / 2f, 0f, Length, top, Wall, WestWindows.Select(WindowOpening).ToList());
@@ -78,10 +68,6 @@ namespace LevelSystem
         static Opening DoorOpening(float x) => new Opening(x - DoorWidth / 2f, x + DoorWidth / 2f, 0f, DoorHeight);
         static Opening WindowOpening(float z) => new Opening(z - WindowWidth / 2f, z + WindowWidth / 2f, SillHeight, WindowTop);
 
-        /// <summary>
-        /// Straight wall along X (at z = across) or along Z (at x = across) from..to, 0..height, cut into boxes around
-        /// rectangular openings measured along the wall.
-        /// </summary>
         public static void WallPieces(Transform parent, Material mat, string name, bool alongX, float across, float from, float to, float height,
             float thickness, List<Opening> openings)
         {
@@ -116,10 +102,6 @@ namespace LevelSystem
             }
         }
 
-        /// <summary>
-        /// Door in a wall running along X: frame, architraves on both faces and a leaf on an <see cref="AutoDoor"/>
-        /// hinge at the +X jamb. Returns the hinge.
-        /// </summary>
         public static Transform Door(Transform parent, OfficePalette p, string name, float x, float wallZ)
         {
             var g = Prims.Group(name, parent, new Vector3(x, 0f, wallZ));
@@ -137,7 +119,7 @@ namespace LevelSystem
             Prims.Flat("Threshold", g, new Vector3(0f, 0.004f, 0f), new Vector3(DoorWidth, 0.008f, Wall + 0.06f), p.metal);
 
             const float leafWidth = DoorWidth - 0.09f;
-            var hinge = Prims.Group("Hinge", g, new Vector3(hw - 0.045f, 0f, 0f), 180f); // leaf hangs towards -X
+            var hinge = Prims.Group("Hinge", g, new Vector3(hw - 0.045f, 0f, 0f), 180f);
             var leaf = Prims.Box("Leaf", hinge, new Vector3(leafWidth / 2f, 1.03f, 0f), new Vector3(leafWidth, 2.04f, 0.04f), p.doorLeaf);
             foreach (float side in new[] { -1f, 1f })
             {
@@ -155,7 +137,7 @@ namespace LevelSystem
 
         static void Window(Transform parent, OfficePalette p, string name, bool west, float z)
         {
-            float wx = west ? -Wall / 2f : Width + Wall / 2f; // wall centre
+            float wx = west ? -Wall / 2f : Width + Wall / 2f;
             float inward = west ? 1f : -1f;
             float hw = WindowWidth / 2f, yc = (SillHeight + WindowTop) / 2f, h = WindowTop - SillHeight;
             var g = Prims.Group(name, parent);
@@ -167,7 +149,6 @@ namespace LevelSystem
             Prims.Box("Mullion", g, new Vector3(wx - inward * 0.03f, yc, z), new Vector3(0.04f, h - 0.1f, 0.04f), p.whitePlastic, false);
             Prims.Flat("Glass", g, new Vector3(wx - inward * 0.03f, yc, z), new Vector3(0.012f, h - 0.1f, WindowWidth - 0.1f), p.glass);
 
-            // Outside: a night city far away, and a little moonlight through the blinds.
             Prims.Quad("Night_View", g, new Vector3(wx - inward * (Wall / 2f + 0.2f), yc, z), new Vector2(WindowWidth + 0.5f, h + 0.5f), new Vector3(inward, 0f, 0f), p.windowNight);
             Prims.SpotLight("Moonlight", g, new Vector3(wx + inward * 0.2f, WindowTop - 0.1f, z), new Vector3(inward, -0.6f, 0f), 100f, 3.5f, 0.25f, Moonlight, false);
 
@@ -199,15 +180,13 @@ namespace LevelSystem
             Run(false, Width - t / 2f, 0f, Length);
         }
 
-        // ------------------------------------------------------------------ ceiling
-
         static void Ceiling(Transform c, OfficePalette p)
         {
             Prims.Box("Ceiling_Slab", c, new Vector3(Width / 2f, Height + 0.05f, Length / 2f), new Vector3(Width + Wall, 0.1f, Length + Wall), p.ceiling, false);
             foreach (float z in new[] { 2f, 6f, 10f })
             foreach (float x in new[] { 2.2f, 5.8f })
             {
-                // Night: only the panel by the entrance and the one by the exit are on.
+
                 bool on = (x > 4f && z < 4f) || (x < 4f && z > 8f);
                 Prims.Flat("Panel_Frame", c, new Vector3(x, Height - 0.008f, z), new Vector3(0.66f, 0.016f, 1.26f), p.lightPlastic);
                 Prims.Flat("Light_Panel", c, new Vector3(x, Height - 0.018f, z), new Vector3(0.6f, 0.02f, 1.2f), on ? p.lightPanel : p.lightPanelOff);
@@ -221,8 +200,6 @@ namespace LevelSystem
             }
             Prims.Cylinder("Smoke_Detector", c, new Vector3(Width / 2f, Height - 0.015f, 6f), 0.065f, 0.03f, p.whitePlastic);
         }
-
-        // ------------------------------------------------------------------ workstations
 
         static void Workstations(Transform parent, OfficePalette p)
         {
@@ -241,7 +218,6 @@ namespace LevelSystem
             Prims.Box("Partition_Foot", parent, new Vector3(x, 0.015f, z), new Vector3(PartitionDepth, 0.03f, 0.08f), p.metal, false);
         }
 
-        /// <summary>Desk against the wall with a chair, monitor and a few things. Local +Z points away from the wall.</summary>
         static void Workstation(Transform parent, OfficePalette p, string name, bool west, float z, int index)
         {
             var g = Prims.Group(name, parent, new Vector3(west ? 0f : Width, 0f, z), west ? 90f : -90f);
@@ -259,17 +235,15 @@ namespace LevelSystem
                 Prims.Box("Handle", pedestal, new Vector3(0f, y + 0.05f, 0.287f), new Vector3(0.12f, 0.015f, 0.012f), p.darkPlastic, false);
             }
 
-            // Chairs are pushed back a little differently at every desk.
             float[] yaws = { -12f, 6f, 15f, -5f, 9f, -15f, 4f, -9f, 12f, -3f, 7f };
             float[] shifts = { 0f, 0.1f, -0.08f, 0.05f, -0.1f, 0.07f, -0.04f, 0.09f, -0.06f, 0.02f, -0.09f };
             float[] distances = { 1.1f, 1.2f, 1.05f, 1.15f, 1.25f, 1.1f, 1.2f, 1.08f, 1.18f, 1.12f, 1.22f };
             Decor.Chair(g, p, "Chair", new Vector3(-0.1f + shifts[index], 0f, distances[index]), 180f + yaws[index]);
 
-            // Desks with two screens move the main one right so both stay within the desk (clear of the partitions).
             bool twoScreens = index % 6 == 3;
             Monitor(g, p, "Monitor", new Vector3(twoScreens ? 0.17f : -0.05f, DeskTop, 0.2f), 0f);
             Prims.Box("Keyboard", g, new Vector3(-0.05f, 0.761f, 0.53f), new Vector3(0.44f, 0.022f, 0.14f), p.darkPlastic, false);
-            // Mouse on the sitter's right of the keyboard, papers on the other side (Eugen's layout).
+
             Prims.Flat("Mouse_Pad", g, new Vector3(-0.43f, 0.7515f, 0.53f), new Vector3(0.22f, 0.003f, 0.18f), p.blue);
             Prims.Box("Mouse", g, new Vector3(-0.43f, 0.765f, 0.53f), new Vector3(0.06f, 0.025f, 0.1f), p.darkPlastic, false);
             Decor.Bin(g, p, new Vector3(-0.5f, 0f, 0.55f));
@@ -352,8 +326,6 @@ namespace LevelSystem
             Prims.Box("Pen", parent, desk + new Vector3(-0.01f, 0.12f, 0.01f), new Vector3(0.008f, 0.14f, 0.008f), p.red, false, new Vector3(-6f, 0f, -5f));
         }
 
-        // ------------------------------------------------------------------ props
-
         static void Props(Transform parent, OfficePalette p)
         {
             Bookcase(parent, p);
@@ -387,7 +359,6 @@ namespace LevelSystem
 
         static Material Poster(OfficePalette p, int i) => p.posters.Length == 0 ? p.paper : p.posters[i % p.posters.Length];
 
-        /// <summary>Gives a Text Mesh its text in the chosen language (now and whenever it is spawned).</summary>
         public static void Localized(TextMesh text, string key)
         {
             var localized = text.gameObject.AddComponent<LocalizedText>();
@@ -432,7 +403,7 @@ namespace LevelSystem
 
         static void Copier(Transform parent, OfficePalette p)
         {
-            var c = Prims.Group("Copier", parent, new Vector3(Width, 0f, 3f), -90f); // front faces the room
+            var c = Prims.Group("Copier", parent, new Vector3(Width, 0f, 3f), -90f);
             var hit = c.gameObject.AddComponent<BoxCollider>();
             hit.center = new Vector3(0.05f, 0.55f, 0.37f);
             hit.size = new Vector3(1.25f, 1.1f, 0.7f);
@@ -463,8 +434,6 @@ namespace LevelSystem
             Prims.Cylinder("Marker_Red", g, new Vector3(-0.12f, 0.853f, 0.055f), 0.011f, 0.13f, p.red, false, new Vector3(0f, 0f, 90f));
             Prims.Box("Eraser", g, new Vector3(0.28f, 0.86f, 0.05f), new Vector3(0.13f, 0.035f, 0.05f), p.darkPlastic, false);
 
-            // How to play, in the chosen language. Seen from the room this group faces the viewer, so the viewer's
-            // left edge of the board is local +X.
             var notes = Prims.Group("Notes", g);
             Localized(Prims.Text("Title", notes, new Vector3(0f, 1.8f, 0.0235f), Vector3.forward, "", 0.11f, Marker, p.text), "board.title");
             for (int i = 0; i < 5; i++)
@@ -481,11 +450,11 @@ namespace LevelSystem
             void Hand(string name, float z, float angle, float length, float width, Material mat)
             {
                 var pivot = Prims.Group(name, g, new Vector3(0f, 0f, z));
-                pivot.localRotation = Quaternion.Euler(0f, 0f, angle); // positive = clockwise as seen from the room
+                pivot.localRotation = Quaternion.Euler(0f, 0f, angle);
                 Prims.Box("Hand", pivot, new Vector3(0f, length / 2f - 0.015f, 0f), new Vector3(width, length, 0.004f), mat, false);
             }
 
-            Hand("Hour", 0.045f, 305f, 0.1f, 0.022f, p.darkPlastic); // 10:10
+            Hand("Hour", 0.045f, 305f, 0.1f, 0.022f, p.darkPlastic);
             Hand("Minute", 0.049f, 60f, 0.14f, 0.014f, p.darkPlastic);
             Hand("Second", 0.053f, 200f, 0.15f, 0.006f, p.red);
             Prims.Cylinder("Cap", g, new Vector3(0f, 0f, 0.056f), 0.012f, 0.008f, p.darkPlastic, false, new Vector3(90f, 0f, 0f));
@@ -512,19 +481,15 @@ namespace LevelSystem
             }
         }
 
-        // ------------------------------------------------------------------ anomalies: old tech
-
-        /// <summary>How the editor makes one anomaly prefab (Office menu): file, readable name, what it replaces, model.</summary>
         public sealed class AnomalySpec
         {
             public string File, Title;
-            /// <summary>Office objects hidden while it is there (paths under the office root).</summary>
+
             public string[] Replaces = new string[0];
-            /// <summary>Builds the model in its place inside the given office (office root, palette).</summary>
+
             public Func<Transform, OfficePalette, Transform> Build;
         }
 
-        /// <summary>The old tech that the round can put into the office.</summary>
         public static readonly AnomalySpec[] AnomalySpecs =
         {
             new AnomalySpec { File = "CRT_TV", Title = "Ламповый телевизор", Build = (o, p) => OldTech.CrtTelevision(o, p, new Vector3(4f, 0f, 8.6f), 180f) },
@@ -553,7 +518,6 @@ namespace LevelSystem
             new AnomalySpec { File = "Film_Camera", Title = "Кинокамера", Build = (o, p) => OldTech.FilmCamera(o, p, new Vector3(2.4f, 0f, 1.6f), 114f) },
         };
 
-        /// <summary>Builds on a desk (desk space), then hangs the result directly under the office root.</summary>
         static Transform OnDesk(Transform office, string desk, Func<Transform, Transform> build) =>
             Moved(office, build(office.Find("Workstations/" + desk)));
 

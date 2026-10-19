@@ -10,10 +10,7 @@ using UnityEngine;
 
 namespace ScareSystem.EditorTools
 {
-    /// <summary>
-    /// Sets up the Babaika's scares: the scare sound bank with its named slots (a README.txt next to it lists them),
-    /// the <see cref="BabaikaChase"/> with its aftermath, and the hunt on the exit stairs (<see cref="AddStairs"/>).
-    /// </summary>
+
     public static class ScareSetup
     {
         public const string SoundFolder = "Assets/_Presentation/Sounds/Scares";
@@ -38,13 +35,11 @@ namespace ScareSystem.EditorTools
             (StairsHunt.SoundRewind, "Петля: кассета перематывается назад после скримера на лестнице (2D).", SoundBank.Placeholder.Rewind, 0.7f),
         };
 
-        /// <summary>Slots that borrow another slot's files while they have none of their own.</summary>
         static readonly (string slot, string fallback)[] Fallbacks =
         {
             (BabaikaChase.SoundScreamer, BabaikaChase.SoundScream),
         };
 
-        /// <summary>Creates or updates the bank: every slot exists with its description; chosen sounds are kept.</summary>
         public static SoundBank EnsureSoundBank()
         {
             if (!AssetDatabase.IsValidFolder(SoundFolder))
@@ -70,7 +65,7 @@ namespace ScareSystem.EditorTools
                 slot.placeholder = placeholder;
                 slot.fallback = Array.Find(Fallbacks, f => f.slot == name).fallback;
             }
-            // Slots the chase no longer plays go, unless sounds were already chosen for them.
+
             bank.slots.RemoveAll(s => !Array.Exists(Slots, x => x.name == s.name) && (s.clips == null || !Array.Exists(s.clips, c => c != null)));
             EditorUtility.SetDirty(bank);
             AssetDatabase.SaveAssetIfDirty(bank);
@@ -93,10 +88,6 @@ namespace ScareSystem.EditorTools
             AssetDatabase.ImportAsset(SoundFolder + "/README.txt");
         }
 
-        /// <summary>
-        /// Adds (or refreshes) the chase and its aftermath (<see cref="GoreSetup.AddGore"/>) on the Game object, and the
-        /// hunt on the exit stairs.
-        /// </summary>
         public static BabaikaChase AddChase(GameObject game, RoundManager round, PlayerController player, Camera view)
         {
             var chase = game.GetComponent<BabaikaChase>();
@@ -114,10 +105,6 @@ namespace ScareSystem.EditorTools
             return chase;
         }
 
-        /// <summary>
-        /// The hunt on the exit stairs: <see cref="StairsHunt"/>, its <see cref="TapeRewind"/> and HUD on the Game
-        /// object, hiding (<see cref="PlayerHide"/>) on the player.
-        /// </summary>
         public static StairsHunt AddStairs(GameObject game, RoundManager round, PlayerController player, Camera view)
         {
             var hide = player.GetComponent<PlayerHide>();

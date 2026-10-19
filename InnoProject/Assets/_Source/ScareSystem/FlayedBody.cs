@@ -5,28 +5,19 @@ using Random = System.Random;
 
 namespace ScareSystem
 {
-    /// <summary>
-    /// A dead office worker with the skin gone, sitting in an office chair: bare muscle with white tendons at the
-    /// joints, staring eyes, bared teeth, blood on the seat and the floor. Built from rounded, tapering limb meshes
-    /// on a pose given in chair space (+Z towards the desk, the seat top at 0.5 m).
-    /// </summary>
+
     public static class FlayedBody
     {
         public enum Pose
         {
-            /// <summary>Fallen forward, cheek on the desk, arms around the head.</summary>
+
             OnDesk,
-            /// <summary>Thrown back over the backrest, face up, arms hanging.</summary>
+
             ThrownBack,
-            /// <summary>Slumped to one side, head on the shoulder, one arm hanging.</summary>
+
             Slumped,
         }
 
-        /// <summary>
-        /// Seats a body in <paramref name="chair"/>; <paramref name="deskEdge"/> is how far ahead of the chair (along
-        /// its +Z) the desk's front edge is, so a body falling forward lands on the desk. Returns its upper body
-        /// (between chest and head, world space): what to look at.
-        /// </summary>
         public static Vector3 Seat(Transform root, GoreBuilder.Kit kit, Random rng, Transform chair, float deskEdge, Pose pose)
         {
             var body = new GameObject("Body_" + pose).transform;
@@ -34,7 +25,6 @@ namespace ScareSystem
             body.position = chair.position;
             body.rotation = chair.rotation;
 
-            // Legs: the same in every pose, a little apart and uneven.
             float spread = R(rng, -0.02f, 0.03f);
             Vector3 hipL = new Vector3(-0.095f, 0.56f, 0f), hipR = new Vector3(0.095f, 0.56f, 0f);
             Vector3 kneeL = new Vector3(-0.11f - spread, 0.55f, 0.43f), kneeR = new Vector3(0.11f + spread, 0.55f, 0.42f);
@@ -46,7 +36,7 @@ namespace ScareSystem
             {
                 case Pose.OnDesk:
                 {
-                    var d = new Vector3(0f, 0f, Mathf.Clamp(deskEdge - 0.28f, -0.05f, 0.25f)); // reach the desk
+                    var d = new Vector3(0f, 0f, Mathf.Clamp(deskEdge - 0.28f, -0.05f, 0.25f));
                     chest = new Vector3(0f, 0.9f, 0.2f) + d * 0.6f;
                     neck = new Vector3(0.01f, 0.95f, 0.34f) + d * 0.8f;
                     head = new Vector3(0.04f, 0.84f, 0.5f) + d;
@@ -66,7 +56,7 @@ namespace ScareSystem
                     chest = new Vector3(0f, 0.93f, -0.15f);
                     neck = new Vector3(0f, 1.06f, -0.2f);
                     head = new Vector3(0f, 1.16f, -0.22f);
-                    headUp = new Vector3(0f, 0.75f, -0.66f); // fallen back, but the face still towards the room
+                    headUp = new Vector3(0f, 0.75f, -0.66f);
                     face = new Vector3(R(rng, -0.2f, 0.2f), 0.55f, 1f);
                     shoulderL = new Vector3(-0.19f, 0.99f, -0.15f);
                     shoulderR = new Vector3(0.19f, 0.99f, -0.15f);
@@ -97,13 +87,13 @@ namespace ScareSystem
             var muscle = kit.muscle;
             Vector3 side = Vector3.right;
             Vector3 waist = Vector3.Lerp(spine, chest, 0.45f);
-            // Trunk.
-            Part(body, muscle, spine + new Vector3(0f, -0.06f, 0.01f), spine + new Vector3(0f, 0.03f, 0f), 0.12f, 0.12f, 0f, side, 1.45f, 0.95f, 0.25f, 0.75f); // pelvis
+
+            Part(body, muscle, spine + new Vector3(0f, -0.06f, 0.01f), spine + new Vector3(0f, 0.03f, 0f), 0.12f, 0.12f, 0f, side, 1.45f, 0.95f, 0.25f, 0.75f);
             Part(body, muscle, spine, waist, 0.115f, 0.125f, 0.05f, side, 1.25f, 0.8f);
             Part(body, muscle, waist, neck - (neck - chest).normalized * 0.04f, 0.135f, 0.115f, 0.08f, side, 1.4f, 0.85f);
-            Part(body, muscle, shoulderL, shoulderR, 0.05f, 0.05f, 0.2f, Vector3.up, 1f, 1f); // across the shoulders
+            Part(body, muscle, shoulderL, shoulderR, 0.05f, 0.05f, 0.2f, Vector3.up, 1f, 1f);
             Part(body, muscle, neck - (neck - chest).normalized * 0.06f, neck + (head - neck).normalized * 0.03f, 0.05f, 0.045f, 0.1f, side, 1.1f, 0.9f);
-            // The muscles that make it read as a body without skin: chest, belly, shoulders.
+
             Vector3 up = (neck - spine).normalized;
             Vector3 across = Vector3.ProjectOnPlane(side, up).normalized;
             Vector3 front = Vector3.Cross(across, up).normalized;
@@ -120,14 +110,14 @@ namespace ScareSystem
             }
             foreach (var (shoulder, elbow) in new[] { (shoulderL, elbowL), (shoulderR, elbowR) })
                 Part(body, muscle, shoulder - up * 0.02f, shoulder + (elbow - shoulder).normalized * 0.07f, 0.056f, 0.045f, 0.1f, front, 1f, 1f);
-            // Legs.
+
             foreach (var (hip, knee, ankle) in new[] { (hipL, kneeL, ankleL), (hipR, kneeR, ankleR) })
             {
                 Part(body, muscle, hip, knee, 0.078f, 0.05f, 0.15f, side, 1f, 0.95f);
                 Part(body, muscle, knee, ankle, 0.05f, 0.032f, 0.2f, side, 0.9f, 1f);
                 Part(body, muscle, ankle, ankle + new Vector3(0f, -0.055f, 0.19f), 0.035f, 0.03f, 0f, side, 1.25f, 0.7f);
             }
-            // Arms.
+
             foreach (var (shoulder, elbow, wrist, tip) in new[] { (shoulderL, elbowL, wristL, tipL), (shoulderR, elbowR, wristR, tipR) })
             {
                 Part(body, muscle, shoulder, elbow, 0.047f, 0.036f, 0.14f, side, 1f, 1f);
@@ -136,7 +126,6 @@ namespace ScareSystem
             }
             Head(body, kit, head, headUp.normalized, face.normalized);
 
-            // Blood on the seat and under the chair.
             var seat = root.InverseTransformPoint(body.TransformPoint(new Vector3(0f, 0.5f, 0.06f)));
             GoreBuilder.Puddle(root, kit, rng, seat, 0.22f, root.InverseTransformDirection(body.up));
             var floor = root.InverseTransformPoint(body.TransformPoint(new Vector3(0f, 0f, 0.3f)));
@@ -144,7 +133,6 @@ namespace ScareSystem
             return body.TransformPoint(Vector3.Lerp(chest, head, 0.5f));
         }
 
-        /// <summary>A skull-shaped head of muscle with lidless eyes and lipless teeth, crown along up, face along face.</summary>
         static void Head(Transform body, GoreBuilder.Kit kit, Vector3 center, Vector3 up, Vector3 face)
         {
             face = Vector3.ProjectOnPlane(face, up).normalized;
@@ -156,7 +144,7 @@ namespace ScareSystem
                 Ball(body, kit.bone, eye, 0.019f);
                 Ball(body, kit.organ, eye + face * 0.016f + frame * new Vector3(x * 0.1f, 0f, 0f), 0.0085f);
             }
-            Ball(body, kit.organ, center + frame * new Vector3(0f, -0.012f, 0.09f), 0.012f); // where the nose was
+            Ball(body, kit.organ, center + frame * new Vector3(0f, -0.012f, 0.09f), 0.012f);
             var teeth = GameObject.CreatePrimitive(PrimitiveType.Cube);
             Object.DestroyImmediate(teeth.GetComponent<Collider>());
             teeth.name = "Teeth";
@@ -180,11 +168,6 @@ namespace ScareSystem
             renderer.shadowCastingMode = ShadowCastingMode.Off;
         }
 
-        /// <summary>
-        /// One rounded, tapering part from a to b (radii ra, rb) with a muscle belly in the middle; the cross section
-        /// is sx wide along <paramref name="side"/> and sy deep. The texture runs along it from v0 to v1, so the
-        /// white tendon ends of the muscle texture land on the joints.
-        /// </summary>
         static void Part(Transform body, Material material, Vector3 a, Vector3 b, float ra, float rb, float bulge, Vector3 side,
             float sx, float sy, float v0 = 0f, float v1 = 1f)
         {
@@ -201,14 +184,13 @@ namespace ScareSystem
             go.GetComponent<MeshRenderer>().sharedMaterial = material;
         }
 
-        /// <summary>Along +Z from 0 to length, with half-round ends (local x is the wide side).</summary>
         static Mesh PartMesh(float length, float ra, float rb, float bulge, float sx, float sy, float v0, float v1)
         {
             const int sides = 12, capRings = 4, bodyRings = 8;
-            var rings = new List<(float z, float r, float nz)>(); // position along the axis, radius, axial part of the normal
+            var rings = new List<(float z, float r, float nz)>();
             for (int k = 0; k <= capRings; k++)
             {
-                float phi = Mathf.PI / 2f * (1f - (float)k / capRings); // 90° (the tip) .. 0°
+                float phi = Mathf.PI / 2f * (1f - (float)k / capRings);
                 rings.Add((-ra * Mathf.Sin(phi), ra * Mathf.Cos(phi), -Mathf.Sin(phi)));
             }
             for (int k = 1; k < bodyRings; k++)
@@ -219,7 +201,7 @@ namespace ScareSystem
             }
             for (int k = 0; k <= capRings; k++)
             {
-                float phi = Mathf.PI / 2f * k / capRings; // 0° .. 90° (the tip)
+                float phi = Mathf.PI / 2f * k / capRings;
                 rings.Add((length + rb * Mathf.Sin(phi), rb * Mathf.Cos(phi), Mathf.Sin(phi)));
             }
 
@@ -255,7 +237,7 @@ namespace ScareSystem
             mesh.SetNormals(normals);
             mesh.SetUVs(0, uvs);
             mesh.SetTriangles(tris, 0);
-            mesh.RecalculateTangents(); // the muscle relief is a normal map
+            mesh.RecalculateTangents();
             mesh.RecalculateBounds();
             return mesh;
         }

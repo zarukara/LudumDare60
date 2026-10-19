@@ -4,12 +4,7 @@ using UnityEngine.InputSystem;
 
 namespace PlayerSystem
 {
-    /// <summary>
-    /// First-person walking without jumping, like in The Exit 8: WASD / arrows / left stick to move, Shift or
-    /// stick click to run, mouse / right stick to look. A click captures the cursor, Esc releases it.
-    /// Head bob and footsteps follow the distance walked; the step sounds are generated on start.
-    /// Yaw lives in the root's rotation, so other code (round teleports) may turn the player.
-    /// </summary>
+
     [RequireComponent(typeof(CharacterController))]
     public class PlayerController : MonoBehaviour
     {
@@ -39,24 +34,22 @@ namespace PlayerSystem
         public bool canMove = true;
         [Tooltip("Off: mouse and stick do not turn the view; scripts set it with Pitch and the root's yaw.")]
         public bool canLook = true;
-        /// <summary>Scripted walking instead of the player's keys (cutscenes, tests): x = strafe, y = forward.</summary>
+
         [System.NonSerialized] public Vector2? scriptedMove;
         [System.NonSerialized] public bool scriptedRun;
-        /// <summary>Lowers the eyes by this much, metres (crouching behind cover, see <see cref="PlayerHide"/>).</summary>
+
         [System.NonSerialized] public float headDrop;
 
-        /// <summary>Up/down look angle in degrees (positive looks down).</summary>
         public float Pitch
         {
             get => pitch;
             set => pitch = Mathf.Clamp(value, -85f, 85f);
         }
 
-        /// <summary>Horizontal speed over the last frame, m/s.</summary>
         public float Speed { get; private set; }
-        /// <summary>Distance walked so far; one step every <see cref="stepLength"/>.</summary>
+
         public float Travelled => travelled;
-        /// <summary>0 standing .. 1 walking, smoothed (drives head bob and the body's gait).</summary>
+
         public float WalkWeight => bobWeight;
 
         CharacterController controller;
@@ -84,14 +77,13 @@ namespace PlayerSystem
 
         void Update()
         {
-            if (GamePause.Paused) return; // the pause menu owns the cursor, and a frozen view must not turn
+            if (GamePause.Paused) return;
             UpdateCursor();
             Look();
             Move();
             ApplyShake();
         }
 
-        /// <summary>Shakes the view (a blow, something very close); stronger calls override weaker ones.</summary>
         public void Shake(float strength) => shake = Mathf.Max(shake, strength);
 
         void ApplyShake()
@@ -138,6 +130,14 @@ namespace PlayerSystem
 
         void Move()
         {
+            if (!controller.enabled)
+            {
+                Speed = 0f;
+                fallSpeed = 0f;
+                Bob(0f, false);
+                return;
+            }
+
             var input = Vector2.zero;
             bool run = false;
             var k = Keyboard.current;
@@ -194,7 +194,7 @@ namespace PlayerSystem
             if (clips == null || clips.Length == 0) clips = generatedSteps;
             if (clips == null || clips.Length == 0) return;
             int i = Random.Range(0, clips.Length);
-            if (clips.Length > 1 && i == lastClip) i = (i + 1) % clips.Length; // never the same sample twice in a row
+            if (clips.Length > 1 && i == lastClip) i = (i + 1) % clips.Length;
             lastClip = i;
             footsteps.pitch = Random.Range(0.92f, 1.08f);
             footsteps.PlayOneShot(clips[i], footstepVolume * Random.Range(0.85f, 1f));
@@ -202,7 +202,6 @@ namespace PlayerSystem
 
         static readonly Collider[] nearFeet = new Collider[8];
 
-        /// <summary>The clips of a <see cref="FootstepSurface"/> the feet are in, or null.</summary>
         AudioClip[] SurfaceClips()
         {
             int count = Physics.OverlapSphereNonAlloc(transform.position + Vector3.up * 0.1f, 0.2f, nearFeet, ~0, QueryTriggerInteraction.Collide);
@@ -214,7 +213,6 @@ namespace PlayerSystem
             return null;
         }
 
-        /// <summary>Carpet or hard floor, judged by the material of the floor under the feet.</summary>
         AudioClip[] ClipsUnderfoot()
         {
             if (!Physics.Raycast(transform.position + Vector3.up * 0.3f, Vector3.down, out var hit, 1f, ~0, QueryTriggerInteraction.Ignore))
@@ -224,7 +222,6 @@ namespace PlayerSystem
             return soft && softSteps.Length > 0 ? softSteps : hardSteps;
         }
 
-        /// <summary>Fallback when no samples are assigned: soft thuds made from low-passed noise.</summary>
         static AudioClip[] MakeStepClips()
         {
             const int rate = 44100;

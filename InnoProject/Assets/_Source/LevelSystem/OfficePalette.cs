@@ -2,10 +2,7 @@ using UnityEngine;
 
 namespace LevelSystem
 {
-    /// <summary>
-    /// All materials (and the door sounds) of the office level. Created and filled by the editor menu "Office/Build All"
-    /// (assets in Assets/_Presentation/Office). Textured materials expect UVs in metres (see <see cref="Prims"/>).
-    /// </summary>
+
     [CreateAssetMenu(menuName = "Office/Palette", fileName = "OfficePalette")]
     public class OfficePalette : ScriptableObject
     {

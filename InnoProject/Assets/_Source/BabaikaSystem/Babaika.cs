@@ -11,13 +11,6 @@ namespace BabaikaSystem
         Run,
     }
 
-    /// <summary>
-    /// The Babaika: a flying head that drags itself along on six clawed legs (<see cref="BabaikaLegs"/>).
-    /// It has no AI. Scripts tell it where to go with <see cref="WalkTo"/>, <see cref="RunTo"/>, <see cref="Follow"/>
-    /// and <see cref="Stand"/>, and the legs find floors, walls, ceilings and furniture by themselves.
-    /// The transform is the centre of the head and goes exactly along the path. The model bobs, leans and
-    /// twitches on top of it. With <see cref="bodyUp"/> pointing down it crawls upside down, hanging from a ceiling.
-    /// </summary>
     [DisallowMultipleComponent]
     public class Babaika : MonoBehaviour
     {
@@ -51,9 +44,8 @@ namespace BabaikaSystem
         public float Speed => speed;
         public bool IsMoving => path.Count > 0;
 
-        /// <summary>Fired when the end of the path or route is reached.</summary>
         public event Action Arrived;
-        /// <summary>Fired after <see cref="Teleport"/>, so the legs can grab new surfaces at once.</summary>
+
         public event Action Teleported;
 
         readonly List<Vector3> path = new List<Vector3>();
@@ -81,9 +73,6 @@ namespace BabaikaSystem
             twitchTimer = UnityEngine.Random.Range(twitchInterval.x, twitchInterval.y);
         }
 
-        // ------------------------------------------------------------------ commands
-
-        /// <summary>Stops where it is (slowing down quickly) and stays there.</summary>
         public void Stand()
         {
             path.Clear();
@@ -99,17 +88,12 @@ namespace BabaikaSystem
 
         public void GoTo(Vector3 point, BabaikaGait gait) => SetPath(new[] { transform.position, point }, gait);
 
-        /// <summary>Goes to a point at exactly this speed (m/s), e.g. a slow descent.</summary>
         public void GoTo(Vector3 point, BabaikaGait gait, float metresPerSecond)
         {
             SetPath(new[] { transform.position, point }, gait);
             cruiseOverride = metresPerSecond;
         }
 
-        /// <summary>
-        /// Another script steers it: the head is put here this frame (call it every frame, e.g. from a chase).
-        /// The legs, lean and jaw follow the resulting speed. <see cref="Stand"/> hands control back.
-        /// </summary>
         public void DriveTo(Vector3 position, BabaikaGait gait = BabaikaGait.Run)
         {
             path.Clear();
@@ -119,17 +103,14 @@ namespace BabaikaSystem
             Gait = gait;
         }
 
-        /// <summary>Opens the jaw all the way and shakes the head for a while.</summary>
         public void Scream(float seconds) => screamTime = Mathf.Max(screamTime, seconds);
 
-        /// <summary>Goes through the route's points on a smooth curve, starting from where it is now.</summary>
         public void Follow(BabaikaRoute route, BabaikaGait gait)
         {
             if (route == null) throw new ArgumentNullException(nameof(route));
             SetPath(route.Sample(transform.position), gait);
         }
 
-        /// <summary>Goes through world points in order (straight lines between them).</summary>
         public void Follow(IList<Vector3> points, BabaikaGait gait)
         {
             var list = new List<Vector3> { transform.position };
@@ -137,7 +118,6 @@ namespace BabaikaSystem
             SetPath(list, gait);
         }
 
-        /// <summary>Moves instantly; the legs grab surfaces around the new place.</summary>
         public void Teleport(Vector3 position, Quaternion rotation)
         {
             Stand();
@@ -147,10 +127,6 @@ namespace BabaikaSystem
             Teleported?.Invoke();
         }
 
-        /// <summary>
-        /// Turns to face a point while standing (for example the player), the head tipped up or down to it. Moving
-        /// overrides it.
-        /// </summary>
         public void LookAt(Vector3 point) => lookTarget = point;
 
         public void StopLooking() => lookTarget = null;
@@ -174,8 +150,6 @@ namespace BabaikaSystem
             pathIndex = 0;
             Gait = path.Count > 0 ? (gait == BabaikaGait.Stand ? BabaikaGait.Walk : gait) : BabaikaGait.Stand;
         }
-
-        // ------------------------------------------------------------------ motion
 
         void Update()
         {
@@ -234,13 +208,12 @@ namespace BabaikaSystem
             AnimateBody(dt);
         }
 
-        /// <summary>Turns towards where it goes, or to the look target while it stands or is steered by a script.</summary>
         void Face(Vector3 position, float dt)
         {
             Vector3 up = bodyUp.sqrMagnitude > 1e-4f ? bodyUp.normalized : Vector3.up;
             Vector3 facing = Looking ? lookTarget.Value - position : Velocity.sqrMagnitude > 0.04f ? Velocity : Vector3.zero;
             facing = Vector3.ProjectOnPlane(facing, up);
-            if (facing.sqrMagnitude < 1e-4f) facing = Vector3.ProjectOnPlane(transform.forward, up); // keeps the body upright (or hanging)
+            if (facing.sqrMagnitude < 1e-4f) facing = Vector3.ProjectOnPlane(transform.forward, up);
             if (facing.sqrMagnitude < 1e-4f) return;
             var goal = Quaternion.LookRotation(facing.normalized, up);
             transform.rotation = Quaternion.RotateTowards(transform.rotation, goal, turnSpeed * dt);
@@ -258,7 +231,7 @@ namespace BabaikaSystem
                 Vector3 local = transform.InverseTransformDirection(Velocity);
                 float leanGoal = runSpeed > 0f ? Mathf.Clamp(local.z / runSpeed, -1f, 1f) * runLean : 0f;
                 lean = Mathf.Lerp(lean, leanGoal, 1f - Mathf.Exp(-6f * dt));
-                // Tipped up or down to what it looks at (the body itself only turns round its up axis).
+
                 float pitchGoal = 0f;
                 if (Looking)
                 {

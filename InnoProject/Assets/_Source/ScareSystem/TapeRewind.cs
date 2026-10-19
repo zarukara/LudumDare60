@@ -6,12 +6,7 @@ using UnityEngine;
 
 namespace ScareSystem
 {
-    /// <summary>
-    /// The camcorder's tape. While recording it keeps where the player was and how they looked, with marks at chosen
-    /// moments (<see cref="Mark"/>). <see cref="Rewind"/> runs it backwards fast, the picture in rewind
-    /// (<see cref="VhsEffect.Rewinding"/>), back to a mark; recording then goes on from there over what came after
-    /// it, like a tape recorded over.
-    /// </summary>
+
     public class TapeRewind : MonoBehaviour
     {
         public PlayerController player;
@@ -33,7 +28,6 @@ namespace ScareSystem
 
         public bool Rewinding { get; private set; }
 
-        /// <summary>Starts a new tape from here.</summary>
         public void Begin()
         {
             frames.Clear();
@@ -48,7 +42,6 @@ namespace ScareSystem
 
         public bool HasMark(int key) => marks.ContainsKey(key);
 
-        /// <summary>Marks this moment under a key (a floor), replacing an older mark with that key.</summary>
         public void Mark(int key)
         {
             if (!recording) return;
@@ -76,10 +69,6 @@ namespace ScareSystem
             drop = player.headDrop,
         };
 
-        /// <summary>
-        /// Runs the tape back to the mark (the start of the tape without one) and leaves the player there. Their
-        /// walking and looking stay as the caller set them.
-        /// </summary>
         public IEnumerator Rewind(int key)
         {
             if (frames.Count == 0 || player == null) yield break;
@@ -93,7 +82,7 @@ namespace ScareSystem
             for (float t = 0f; t < seconds; t += Time.deltaTime)
             {
                 float u = Mathf.Clamp01(t / seconds);
-                float time = Mathf.Lerp(from, to, u * u * (3f - 2f * u)); // the reels speed up, then brake
+                float time = Mathf.Lerp(from, to, u * u * (3f - 2f * u));
                 while (index > target + 1 && frames[index - 1].time > time) index--;
                 var a = frames[Mathf.Max(index - 1, target)];
                 var b = frames[index];

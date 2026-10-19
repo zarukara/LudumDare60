@@ -3,10 +3,7 @@ using UnityEngine;
 
 namespace BabaikaSystem
 {
-    /// <summary>
-    /// Test-scene driver: stands, walks the route, stands, runs the route, and over again.
-    /// Keys 1 / 2 / 3: stand, walk, run on demand.
-    /// </summary>
+
     public class BabaikaDemo : MonoBehaviour
     {
         public Babaika babaika;

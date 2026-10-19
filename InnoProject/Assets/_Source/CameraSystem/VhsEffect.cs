@@ -4,13 +4,7 @@ using UnityEngine.UI;
 
 namespace CameraSystem
 {
-    /// <summary>
-    /// Makes the camera look like a played-back VHS tape. The camera draws into a texture that a full-screen
-    /// RawImage shows through the "Office/VHS" material, with the VCR's "PLAY" / "PAUSE" mark, the pause key under
-    /// it and a running tape counter on top; an empty camera clears the screen behind it. While
-    /// <see cref="Rewinding"/> is set the mark reads "◄◄ REW", the counter runs back and the picture tears like a
-    /// tape in fast rewind. Only this camera is affected, no render pipeline asset changes. Runs in Play Mode only.
-    /// </summary>
+
     [RequireComponent(typeof(Camera))]
     public class VhsEffect : MonoBehaviour
     {
@@ -21,11 +15,10 @@ namespace CameraSystem
         public bool showOverlay = true;
         public string date = "17.10.1996";
 
-        /// <summary>The tape is running back (a scare's rewind, see ScareSystem.TapeRewind).</summary>
         public static bool Rewinding;
 
         static readonly int Strength = Shader.PropertyToID("_Strength");
-        // Tape faults, pushed to their harshest while rewinding.
+
         static readonly (int id, float rewound)[] Faults =
         {
             (Shader.PropertyToID("_Tracking"), 1f), (Shader.PropertyToID("_HeadSwitch"), 1f), (Shader.PropertyToID("_Dropouts"), 0.6f),
@@ -127,7 +120,7 @@ namespace CameraSystem
             canvasObject = new GameObject("VHS_Canvas", typeof(Canvas), typeof(CanvasScaler)) { hideFlags = HideFlags.DontSave };
             var canvas = canvasObject.GetComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            canvas.sortingOrder = -100; // any game UI goes on top
+            canvas.sortingOrder = -100;
             var scaler = canvasObject.GetComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(1920f, 1080f);
@@ -143,7 +136,7 @@ namespace CameraSystem
             image.raycastTarget = false;
 
             if (!showOverlay) return;
-            // Top left: the VCR mode and, under it, the key that pauses the game.
+
             mode = Label("", TextAnchor.UpperLeft, new Vector2(0f, 1f), new Vector2(Left, ModeTop), 46, OsdColor);
             modeSign = PauseSign(32f, OsdColor, 3f);
             key = Label("Tab", TextAnchor.UpperLeft, new Vector2(0f, 1f), new Vector2(Left, KeyTop), 30, KeyColor);
@@ -152,10 +145,6 @@ namespace CameraSystem
             ShowMode(false, false);
         }
 
-        /// <summary>
-        /// "PLAY ►" with "❚❚ Tab" under it, or while paused "PAUSE ❚❚" with "► Tab" and the still picture faded
-        /// almost to black under the settings, or "◄◄ REW" while the tape runs back.
-        /// </summary>
         void ShowMode(bool paused, bool rewinding)
         {
             shownPaused = paused;
@@ -192,7 +181,6 @@ namespace CameraSystem
             return label;
         }
 
-        /// <summary>The pause sign, two upright bars of the given height, anchored top left like the labels.</summary>
         RectTransform PauseSign(float height, Color color, float shadowDistance)
         {
             var sign = new GameObject("PauseSign", typeof(RectTransform)).GetComponent<RectTransform>();

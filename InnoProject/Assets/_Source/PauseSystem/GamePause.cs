@@ -3,15 +3,10 @@ using UnityEngine.InputSystem;
 
 namespace PauseSystem
 {
-    /// <summary>
-    /// Tab (Start on a gamepad) pauses and resumes the game: time stops, every sound pauses, and the player's
-    /// scripts check <see cref="Paused"/> to ignore keys and the mouse. The cursor is free while paused (the
-    /// <see cref="PauseMenu"/> settings) and captured again on resume. The VHS overlay shows the state.
-    /// Disabling or unloading this component resumes the game.
-    /// </summary>
+
     public class GamePause : MonoBehaviour
     {
-        /// <summary>True while the game is paused.</summary>
+
         public static bool Paused { get; private set; }
 
         static float resumeTimeScale = 1f;
@@ -22,7 +17,7 @@ namespace PauseSystem
         void Update()
         {
             var keyboard = Keyboard.current;
-            bool pressed = (keyboard != null && keyboard.tabKey.wasPressedThisFrame && !keyboard.altKey.isPressed) // not Alt+Tab
+            bool pressed = (keyboard != null && keyboard.tabKey.wasPressedThisFrame && !keyboard.altKey.isPressed)
                            || (Gamepad.current != null && Gamepad.current.startButton.wasPressedThisFrame);
             if (pressed) Set(!Paused);
         }

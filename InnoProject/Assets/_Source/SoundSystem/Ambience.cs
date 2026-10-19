@@ -3,13 +3,7 @@ using UnityEngine;
 
 namespace SoundSystem
 {
-    /// <summary>
-    /// Background ambience that grows with the player's level, like the pages in Slender: one seamless loop per
-    /// stage, calm to intense. On a new stage the old loop fades out and the new one swells in from the top of its
-    /// loop; a mistake (back to level 1) brings the calm back, and reaching the exit fades everything out.
-    /// Scripts can push it down for a while with <see cref="Duck"/> (a chase with its own music). Plays in 2D;
-    /// the pause stops it along with every other sound.
-    /// </summary>
+
     public class Ambience : MonoBehaviour
     {
         public RoundManager round;
@@ -23,7 +17,6 @@ namespace SoundSystem
         [Tooltip("Seconds for the new stage to swell in; it starts once the old one is mostly gone.")]
         public float fadeIn = 4f;
 
-        /// <summary>The stage that plays or swells in (0 = calm).</summary>
         public int Stage { get; private set; }
 
         AudioSource[] sources;
@@ -31,7 +24,6 @@ namespace SoundSystem
         bool[] playing;
         float master, masterTarget = 1f, duck = 1f, duckTarget = 1f;
 
-        /// <summary>Smoothly lowers the ambience to a share of its volume; 1 brings it back.</summary>
         public void Duck(float share) => duckTarget = Mathf.Clamp01(share);
 
         void Awake()
@@ -46,7 +38,7 @@ namespace SoundSystem
                 source.loop = true;
                 source.playOnAwake = false;
                 source.spatialBlend = 0f;
-                source.priority = 0; // never dropped for effects
+                source.priority = 0;
                 source.volume = 0f;
                 sources[i] = source;
             }

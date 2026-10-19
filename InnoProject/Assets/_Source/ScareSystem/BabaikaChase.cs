@@ -11,19 +11,7 @@ using UnityEngine;
 
 namespace ScareSystem
 {
-    /// <summary>
-    /// The one-time Babaika chase. On level <see cref="triggerLevel"/> the office is always normal; when its far
-    /// door opens, the Babaika comes down from the corridor ceiling behind it (cutscene: the view turns to her and
-    /// zooms in) and goes after the player, who has to run back to level <see cref="escapeLevel"/>.
-    /// She runs along the player's own track, so she takes the same doors and corners. She presses harder level by
-    /// level: at first she keeps a few metres back (<see cref="pressureGapStart"/>, slower than walking at her
-    /// slowest), so a look back finds her coming; on the escape level a running player keeps her right behind
-    /// (<see cref="pressureGap"/>), and one who walks or stops gets caught.
-    /// Escaped: on the escape level the office door slams shut behind the player and stays locked, and she throws
-    /// herself at it so the door shakes. Caught: a screamer, then back to the first level with the doors as usual.
-    /// Either way it does not happen again in this run. Sounds are slots of <see cref="sounds"/> (see the Sound*
-    /// names); the game's <see cref="ambience"/> is pushed down from the cutscene until the chase is over.
-    /// </summary>
+
     public class BabaikaChase : MonoBehaviour
     {
         public const string SoundScream = "babaika_scream";
@@ -79,7 +67,6 @@ namespace ScareSystem
 
         public Phase State { get; private set; }
 
-        // The entry seam's first half in stage space, from the dead end to the stage line.
         static readonly Vector2Int[] SeamBehind = { new Vector2Int(2, -2), new Vector2Int(2, -1), new Vector2Int(2, 0), new Vector2Int(1, 0) };
 
         readonly List<Vector3> track = new List<Vector3>();
@@ -115,12 +102,8 @@ namespace ScareSystem
             round.AnomalyBans.Remove(NormalTriggerOffice);
         }
 
-        /// <summary>The office where she comes is always normal.</summary>
         bool NormalTriggerOffice(int progress) => State == Phase.Waiting && progress + 1 == triggerLevel;
 
-        // ------------------------------------------------------------------ round events
-
-        /// <summary>Debugging what comes after: ends the event at once, as if it had happened.</summary>
         internal void SkipToDone()
         {
             StopAllCoroutines();
@@ -151,39 +134,30 @@ namespace ScareSystem
             }
             else if (State == Phase.Banging)
             {
-                // The player has gone on: she stays behind with the old stage.
+
                 Cleanup();
                 State = Phase.Done;
             }
         }
 
-        /// <summary>
-        /// Starts the cutscene once the trigger level's far door is open with the player inside that office; a door
-        /// that opened for a player somewhere else does not count.
-        /// </summary>
         void WaitForDoor()
         {
             if (watchedDoor == null || !watchedDoor.IsOpen || round.Level != triggerLevel || babaikaPrefab == null || !InOffice()) return;
-            var local = round.CurrentStage.Room.transform.InverseTransformPoint(player.transform.position);
-            Debug.Log($"[BabaikaChase] Cutscene on level {round.Level}, player in the office at x {local.x:F1}, z {local.z:F1}");
+
             StartCoroutine(Cutscene());
         }
 
-        /// <summary>The player stands in the current office, not in a corridor behind its walls.</summary>
         bool InOffice()
         {
             var local = round.CurrentStage.Room.transform.InverseTransformPoint(player.transform.position);
             return local.x > 0f && local.x < OfficeRoomBuilder.Width && local.z > 0f && local.z < OfficeRoomBuilder.Length;
         }
 
-        /// <summary>The door of the stage's office whose frame is named <paramref name="name"/> ("Entrance_Door", "Exit_Door").</summary>
         internal static AutoDoor Door(Stage stage, string name)
         {
             if (stage == null || stage.Room == null) return null;
             return stage.Room.GetComponentsInChildren<AutoDoor>(true).FirstOrDefault(d => d.transform.parent != null && d.transform.parent.name == name);
         }
-
-        // ------------------------------------------------------------------ cutscene
 
         IEnumerator Cutscene()
         {
@@ -200,7 +174,7 @@ namespace ScareSystem
             player.canMove = false;
             player.canLook = false;
             float normalFov = view.fieldOfView;
-            if (ambience != null) ambience.Duck(0.25f); // a hush while she comes down
+            if (ambience != null) ambience.Duck(0.25f);
             babaika.GoTo(low, BabaikaGait.Walk, descendSpeed);
 
             float descent = Vector3.Distance(hang, low) / descendSpeed + 0.4f;
@@ -212,7 +186,7 @@ namespace ScareSystem
             }
 
             var scream = sounds != null ? sounds.PlayAt(SoundScream, babaika.transform.position) : null;
-            babaika.Scream(scream != null ? Mathf.Clamp(scream.length * 0.9f, 1.3f, 3f) : 1.3f); // the jaw stays open for the cry
+            babaika.Scream(scream != null ? Mathf.Clamp(scream.length * 0.9f, 1.3f, 3f) : 1.3f);
             player.Shake(0.6f);
             for (float t = 0f; t < 1.1f; t += Time.deltaTime)
             {
@@ -234,8 +208,6 @@ namespace ScareSystem
         void TurnView(Vector3 target, float sharpness) => ScareView.TurnTowards(player, view, target, sharpness);
 
         static float Smooth(float t) => ScareView.Smooth(t);
-
-        // ------------------------------------------------------------------ chase
 
         void BeginChase(Transform room)
         {
@@ -277,7 +249,7 @@ namespace ScareSystem
             float gapGoal = Mathf.Lerp(pressureGapStart, pressureGap, pressure);
             float slowest = Mathf.Lerp(minSpeedStart, minSpeed, pressure);
             float speed = Mathf.Clamp(player.Speed + 2.2f * (gap - gapGoal), slowest, maxSpeed);
-            if (chaseTime < 2f) speed = Mathf.Min(speed, 1.2f + 0.9f * chaseTime); // a moment to turn round and run
+            if (chaseTime < 2f) speed = Mathf.Min(speed, 1.2f + 0.9f * chaseTime);
 
             float step = speed * dt;
             while (step > 0f)
@@ -307,7 +279,7 @@ namespace ScareSystem
                 return;
             }
 
-            float near = Mathf.InverseLerp(6f, pressureGap * 0.8f, gap); // by how close she really is
+            float near = Mathf.InverseLerp(6f, pressureGap * 0.8f, gap);
             if (heartbeat != null)
             {
                 heartbeat.volume = Mathf.Lerp(0.25f, 0.9f, near);
@@ -319,7 +291,6 @@ namespace ScareSystem
             if (slamDoor != null && PastDoor()) Slam();
         }
 
-        /// <summary>How hard she presses: 0 on the level the chase began, 1 on the escape level.</summary>
         float Pressure => Mathf.Clamp01((float)(triggerLevel - round.Level) / Mathf.Max(1, triggerLevel - escapeLevel));
 
         float TrackLength(Vector3 from, Vector3 target)
@@ -334,7 +305,6 @@ namespace ScareSystem
             return length + Vector3.Distance(previous, target);
         }
 
-        /// <summary>The player is a step inside the escape level's office.</summary>
         bool PastDoor()
         {
             var room = round.CurrentStage.Room.transform;
@@ -342,10 +312,6 @@ namespace ScareSystem
             return local.z > 0.9f && local.x > 0f && local.x < OfficeRoomBuilder.Width;
         }
 
-        /// <summary>
-        /// Keeps her behind the player over a stage line: she is moved like the player was. If that puts her past the
-        /// built seam (she was far behind), she comes out of the seam's dead end, round a corner from the player.
-        /// </summary>
         void OnLineCrossed(RoundManager.StageShift shift)
         {
             if (State != Phase.Chase || babaika == null) return;
@@ -377,8 +343,6 @@ namespace ScareSystem
             babaika.Teleport(mapped, shift.Map(babaika.transform.rotation));
         }
 
-        // ------------------------------------------------------------------ escaped: the door
-
         void Slam()
         {
             var door = slamDoor;
@@ -393,7 +357,7 @@ namespace ScareSystem
             var room = round.CurrentStage.Room.transform;
             Vector3 rest = BangRest(room);
             if (room.InverseTransformPoint(babaika.transform.position).z > -0.6f)
-                babaika.Teleport(rest, room.rotation); // the slamming door throws her back out
+                babaika.Teleport(rest, room.rotation);
             StartCoroutine(Bang(door, room));
         }
 
@@ -404,7 +368,7 @@ namespace ScareSystem
             Vector3 rest = BangRest(room);
             Vector3 hit = room.TransformPoint(new Vector3(OfficeRoomBuilder.EntranceX + 0.1f, headHeight - 0.05f, -0.6f));
             babaika.LookAt(room.TransformPoint(new Vector3(OfficeRoomBuilder.EntranceX, headHeight - 0.1f, 1f)));
-            // Once the leaf is shut, every claw takes a new hold on this side of it.
+
             yield return new WaitForSeconds(0.15f);
             if (babaika != null) babaika.Teleport(babaika.transform.position, babaika.transform.rotation);
             while (State == Phase.Banging && babaika != null && door != null)
@@ -432,8 +396,6 @@ namespace ScareSystem
             }
             if (babaika != null) babaika.DriveTo(to, BabaikaGait.Walk);
         }
-
-        // ------------------------------------------------------------------ caught: the screamer
 
         IEnumerator Screamer()
         {
@@ -479,8 +441,6 @@ namespace ScareSystem
             }
             fade = 0f;
         }
-
-        // ------------------------------------------------------------------ helpers
 
         AudioSource Loop(string slot, GameObject host, bool spatial, float volume)
         {

@@ -2,13 +2,10 @@ using UnityEngine;
 
 namespace LevelSystem
 {
-    /// <summary>
-    /// Props used both in the office and in the corridors. Each one is a group standing on the floor at its
-    /// position; wall props face their local +Z (away from the wall).
-    /// </summary>
+
     public static class Decor
     {
-        /// <summary>Office chair; its local +Z is where the seated person looks. Only the seat collides.</summary>
+
         public static Transform Chair(Transform parent, OfficePalette p, string name, Vector3 floor, float yaw)
         {
             var c = Prims.Group(name, parent, floor, yaw);
@@ -31,7 +28,6 @@ namespace LevelSystem
             return c;
         }
 
-        /// <summary>Tall ficus in a round pot (the circle on the office plan).</summary>
         public static Transform BigPlant(Transform parent, OfficePalette p, string name, Vector3 floor)
         {
             var g = Prims.Group(name, parent, floor);
@@ -60,7 +56,6 @@ namespace LevelSystem
             return g;
         }
 
-        /// <summary>Floor plant for corridor corners.</summary>
         public static Transform CornerPlant(Transform parent, OfficePalette p, Vector3 floor)
         {
             var g = Prims.Group("Plant", parent, floor);
@@ -85,7 +80,6 @@ namespace LevelSystem
             return g;
         }
 
-        /// <summary>Framed print on a wall; <paramref name="wallPoint"/> is on the wall face at the picture's centre height.</summary>
         public static Transform Poster(Transform parent, OfficePalette p, string name, Vector3 wallPoint, float yaw, Material picture, Vector2 size)
         {
             var g = Prims.Group(name, parent, wallPoint, yaw);
@@ -102,7 +96,6 @@ namespace LevelSystem
             return g;
         }
 
-        /// <summary>Wall-mounted extinguisher; the group stands on the floor at the wall face, facing +Z.</summary>
         public static Transform Extinguisher(Transform parent, OfficePalette p, Vector3 floorAtWall, float yaw)
         {
             var g = Prims.Group("Extinguisher", parent, floorAtWall, yaw);

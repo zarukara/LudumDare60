@@ -8,19 +8,7 @@ using UnityEngine.Events;
 
 namespace RoundSystem
 {
-    /// <summary>
-    /// The round loop (Exit 8 style). Each round the office is spawned anew and with <see cref="anomalyChance"/> gets
-    /// one random anomaly prefab from <see cref="anomalies"/> (none repeats until every one has been shown, mistakes
-    /// or not). The player looks around and leaves through one of the
-    /// two exits: forward = "no anomaly", back = "there is an anomaly". A right call adds 1 to the progress, a wrong
-    /// one resets it to 0 (or takes <see cref="mistakePenalty"/> off). After <see cref="roundsToWin"/> right calls
-    /// in a row the win event fires and the corridor leads to the exit.
-    ///
-    /// Other systems pass the player's decision with <see cref="SubmitDecision"/> and listen to the events. In this
-    /// level the exits are the stage lines: crossing one rebuilds the stage around the player and moves them onto
-    /// the entry line of the new one (see <see cref="StageLayout"/>). Stages are built relative to this object;
-    /// keep it unrotated.
-    /// </summary>
+
     public class RoundManager : MonoBehaviour
     {
         [Tooltip("Player root with a CharacterController (any controller that turns the root for yaw works).")]
@@ -49,55 +37,40 @@ namespace RoundSystem
         public UnityEvent<bool> onDecision = new UnityEvent<bool>();
         public UnityEvent onWin = new UnityEvent();
 
-        /// <summary>Right calls in a row (0 .. roundsToWin).</summary>
         public int Progress { get; private set; }
         public Anomaly CurrentAnomaly { get; private set; }
         public bool HasAnomaly => CurrentAnomaly != null;
         public bool IsFinishStage { get; private set; }
         public bool Won { get; private set; }
-        /// <summary>The player has seen into this round's office (from inside or through the open door).</summary>
+
         public bool SawOffice { get; private set; }
-        /// <summary>The round's anomaly has been clearly in view (on screen, not hidden behind anything).</summary>
+
         public bool SawAnomaly { get; private set; }
         public Stage CurrentStage { get; private set; }
         public float RunTime => (Won ? winTime : Time.time) - startTime;
 
-        /// <summary>A round began: progress so far and whether the room has an anomaly.</summary>
         public event Action<int, bool> RoundStarted;
-        /// <summary>The player decided: was it right, and the progress after it.</summary>
+
         public event Action<bool, int> DecisionMade;
-        /// <summary>The run was reset to the first round.</summary>
+
         public event Action RunStarted;
         public event Action GameWon;
-        /// <summary>The player walked down the stairs at the very end.</summary>
+
         public event Action ExitReached;
-        /// <summary>
-        /// The player was carried over a stage line (after the new stage, if any, was built). Other things that should
-        /// stay where they were relative to the player (a chaser) are moved with <see cref="StageShift.Map(Vector3)"/>.
-        /// </summary>
+
         public event Action<StageShift> LineCrossed;
 
-        /// <summary>Level shown on the signs (progress + 1).</summary>
         public int Level => Progress + 1;
-        /// <summary>
-        /// Scripted retreat (a chase): every stage line, either way, takes one level off and the stages have no
-        /// anomalies. See <see cref="BeginRetreat"/>.
-        /// </summary>
+
         public bool Retreating { get; private set; }
-        /// <summary>
-        /// Rules from other systems, by progress: no anomaly in that office (a scripted event waits there or fills it).
-        /// One rule saying yes is enough.
-        /// </summary>
+
         public readonly List<Predicate<int>> AnomalyBans = new List<Predicate<int>>();
-        /// <summary>
-        /// Rules from other systems, by progress: either way out of that office is right (its scene counts as an
-        /// anomaly or as decoration, the player's choice). Turning back still needs a look into the office first.
-        /// </summary>
+
         public readonly List<Predicate<int>> FreeChoices = new List<Predicate<int>>();
 
         const float LineHalfWidth = 1.2f;
         const float SightSeconds = 0.25f, SightRange = 14f;
-        // Points in the office (office space) that show it has been looked into.
+
         static readonly Vector3[] OfficeSamples = { new Vector3(4f, 1.2f, 3f), new Vector3(4f, 1.2f, 6f), new Vector3(4f, 1.2f, 9f) };
 
         System.Random rng;
@@ -109,10 +82,8 @@ namespace RoundSystem
 
         void Start() => Restart();
 
-        // Created on first use: a script reload in Play Mode drops it, and the loop must survive that.
         System.Random Rng => rng ??= new System.Random(seed != 0 ? seed : Environment.TickCount);
 
-        /// <summary>Back to round one with no progress.</summary>
         public void Restart()
         {
             Progress = 0;
@@ -127,7 +98,6 @@ namespace RoundSystem
             StartRound();
         }
 
-        /// <summary>Back to the first level without restarting the run: the clock keeps going, no hints again.</summary>
         public void ResetProgress()
         {
             Progress = 0;
@@ -136,7 +106,6 @@ namespace RoundSystem
             StartRound();
         }
 
-        /// <summary>Straight to this progress, at the start of a fresh stage (scripted jumps, debugging a level).</summary>
         public void JumpTo(int progress)
         {
             Progress = Mathf.Clamp(progress, 0, roundsToWin - 1);
@@ -145,21 +114,14 @@ namespace RoundSystem
             StartRound();
         }
 
-        /// <summary>From now on every stage line takes one level off (down to the first) and stages stay normal.</summary>
         public void BeginRetreat() => Retreating = true;
 
-        /// <summary>Back to the normal rules from the current stage on.</summary>
         public void EndRetreat() => Retreating = false;
 
-        /// <summary>Just past the entry line, walking on.</summary>
         void MoveToStart() =>
             MovePlayer(transform.position + StageLayout.EntryLine + StageLayout.Forward * 0.6f + Vector3.up * 0.05f,
                 Quaternion.LookRotation(StageLayout.Forward));
 
-        /// <summary>
-        /// The player's choice: true = "there is an anomaly" (went back), false = "no anomaly" (went on).
-        /// Checks it, updates the progress, fires the events and starts the next round. Returns whether it was right.
-        /// </summary>
         public bool SubmitDecision(bool reportedAnomaly)
         {
             if (Won) return false;
@@ -181,7 +143,7 @@ namespace RoundSystem
 
         void StartRound()
         {
-            // The previous anomaly goes away with its office.
+
             AnomalyDirector.Remove(CurrentAnomaly);
             if (CurrentStage != null) Destroy(CurrentStage.gameObject);
             CurrentAnomaly = null;
@@ -214,10 +176,7 @@ namespace RoundSystem
 
             if (Along(lastPosition, entry) >= 0f && Along(pos, entry) < 0f && Across(pos, entry) < LineHalfWidth)
             {
-                // Walked back over the entry line. Turn the player around onto the entry line; the seam looks the
-                // same both ways, so they just keep walking. It is the "anomaly" answer only once they have really
-                // looked: the anomaly itself was in view, or (with no anomaly) the office was. Otherwise it just
-                // leads into the same corridor again, so rooms cannot be skipped by guessing.
+
                 var mirrored = 2f * entry - pos;
                 MovePlayer(transform.position + new Vector3(mirrored.x, pos.y, mirrored.z), Quaternion.Euler(0f, 180f, 0f) * player.rotation);
                 if (Retreating) StepBack();
@@ -226,7 +185,7 @@ namespace RoundSystem
             }
             else if (!IsFinishStage && Along(lastPosition, exit) < 0f && Along(pos, exit) >= 0f && Across(pos, exit) < LineHalfWidth)
             {
-                // Went on over the exit line: "no anomaly". Same spot relative to the entry line.
+
                 MovePlayer(transform.position + entry + (pos - exit), player.rotation);
                 if (Retreating) StepBack();
                 else SubmitDecision(false);
@@ -240,10 +199,6 @@ namespace RoundSystem
             lastPosition = player.position - transform.position;
         }
 
-        /// <summary>
-        /// The run is over: the player is out (the finish zone, or a scripted ending calls this). Takes control away,
-        /// frees the cursor and fires <see cref="ExitReached"/> once.
-        /// </summary>
         public void ReachExit()
         {
             if (exitReached) return;
@@ -254,28 +209,23 @@ namespace RoundSystem
             ExitReached?.Invoke();
         }
 
-        /// <summary>Retreat: one level down, a fresh normal stage.</summary>
         void StepBack()
         {
             Progress = Mathf.Max(0, Progress - 1);
             StartRound();
         }
 
-        /// <summary>How far past a stage line a point is, in the walking direction.</summary>
         static float Along(Vector3 point, Vector3 line) => Vector3.Dot(point - line, StageLayout.Forward);
 
-        /// <summary>Sideways distance from the middle of a stage line.</summary>
         static float Across(Vector3 point, Vector3 line) =>
             Mathf.Abs(Vector3.Dot(point - line, Vector3.Cross(Vector3.up, StageLayout.Forward)));
 
-        /// <summary>A step past the door is enough: the whole office is in view from there.</summary>
         bool InsideOffice(Vector3 worldPosition)
         {
             var local = CurrentStage.Room.transform.InverseTransformPoint(worldPosition);
             return local.x > 0.2f && local.x < OfficeRoomBuilder.Width - 0.2f && local.z > 0.6f && local.z < OfficeRoomBuilder.Length - 0.2f;
         }
 
-        /// <summary>Notes whether the office and the anomaly have been seen this round.</summary>
         void UpdateSight()
         {
             var cam = Camera.main;
@@ -297,7 +247,6 @@ namespace RoundSystem
             }
         }
 
-        /// <summary>Middle, top and sides of the anomaly: seeing any of them counts.</summary>
         void CollectSamples(Transform anomaly)
         {
             var renderers = anomaly.GetComponentsInChildren<Renderer>();
@@ -312,7 +261,6 @@ namespace RoundSystem
             });
         }
 
-        /// <summary>On screen, not too far, and nothing solid (walls, doors, desks, partitions) in between.</summary>
         bool InView(Camera cam, Vector3 point, Transform target)
         {
             var viewport = cam.WorldToViewportPoint(point);
@@ -329,10 +277,6 @@ namespace RoundSystem
             return true;
         }
 
-        /// <summary>
-        /// How a stage-line crossing moved the player: walking back turns the world half around the entry line,
-        /// walking on shifts it from the exit line to the entry line.
-        /// </summary>
         public readonly struct StageShift
         {
             public readonly bool Back;
@@ -358,7 +302,6 @@ namespace RoundSystem
             if (controller != null) controller.enabled = true;
         }
 
-        /// <summary>Switches the player's scripts (movement, look) on or off.</summary>
         void SetPlayerControl(bool on)
         {
             foreach (var behaviour in player.GetComponents<MonoBehaviour>())

@@ -3,19 +3,15 @@ using UnityEngine;
 
 namespace LevelSystem
 {
-    /// <summary>
-    /// Builds the corridors of a <see cref="StageLayout"/>: floor, ceiling, walls (one per boundary), trims, a
-    /// ceiling light in every cell and random decoration outside the seams, plus the hanging stage sign.
-    /// </summary>
+
     public static class CorridorBuilder
     {
         public const float Height = 2.6f, WallThickness = 0.15f;
         const float Half = StageLayout.Cell / 2f;
         const int North = 0, South = 2;
 
-        // North, east, south, west in grid steps (grid y is world +Z).
         static readonly Vector2Int[] Steps = { Vector2Int.up, Vector2Int.right, Vector2Int.down, Vector2Int.left };
-        static readonly Color LightColor = new Color(0.78f, 0.92f, 0.84f); // dim, greenish night-time tubes
+        static readonly Color LightColor = new Color(0.78f, 0.92f, 0.84f);
         static readonly Color SignColor = new Color(1f, 0.82f, 0.25f);
 
         sealed class CellInfo
@@ -23,11 +19,10 @@ namespace LevelSystem
             public readonly bool[] Open = new bool[4];
             public int Door = -1;
             public bool Fixed;
-            /// <summary>Position in its path. Seam cells have the same index at the entry and the exit.</summary>
+
             public int Index;
         }
 
-        /// <param name="withExit">False for the last stage, whose office slot holds the exit hall instead.</param>
         public static void Build(Transform parent, OfficePalette p, StageLayout layout, System.Random rng, bool withExit)
         {
             var root = Prims.Group("Corridors", parent);
@@ -45,7 +40,6 @@ namespace LevelSystem
                 BuildCell(root, p, pair.Key, pair.Value, walls, rng);
         }
 
-        /// <summary>Sign hanging in the first cell after the entry seam, readable from both sides.</summary>
         public static TextMesh[] Sign(Transform parent, OfficePalette p, string text, Color? color = null)
         {
             var g = Prims.Group("Stage_Sign", parent, StageLayout.CellCenter(StageLayout.SignCell) + Vector3.up * 2.15f);
@@ -74,9 +68,6 @@ namespace LevelSystem
             }
         }
 
-        // Lights of the seam cells (StageLayout.SeamCells, the first cells of both paths). Cell i and cell 7 - i face
-        // each other across the stage line, so they match (the seam looks the same after a half turn), and the entry
-        // and exit seams share the indices (cell 0 of the exit is the always-lit door cell). The line itself is dark.
         static readonly bool[] SeamLights = { true, false, true, false, false, true, false, true };
 
         static bool Lit(int index) => index < SeamLights.Length ? SeamLights[index] : (index - SeamLights.Length) % 2 == 1;
@@ -98,12 +89,11 @@ namespace LevelSystem
 
             bool alongX = (info.Open[1] || info.Open[3]) && !(info.Open[0] || info.Open[2]);
             var panelSize = alongX ? new Vector3(1.2f, 0.02f, 0.6f) : new Vector3(0.6f, 0.02f, 1.2f);
-            // Night: about every other light is off. The office door cells always shine (their light reaches into
-            // the office); elsewhere the pattern follows the path index, see Lit.
+
             bool lit = info.Door >= 0 || Lit(info.Index);
             Prims.Flat("Panel_Frame", g, new Vector3(0f, Height - 0.008f, 0f), panelSize + new Vector3(0.06f, -0.004f, 0.06f), p.lightPlastic);
             Prims.Flat("Light_Panel", g, new Vector3(0f, Height - 0.018f, 0f), panelSize, lit ? p.lightPanel : p.lightPanelOff);
-            // Short range: a light must not reach the parts of a seam that are visible from its line.
+
             if (lit) Prims.PointLight("Light", g, new Vector3(0f, Height - 0.25f, 0f), 3.4f, 0.6f, LightColor);
 
             for (int side = 0; side < 4; side++)
@@ -128,8 +118,6 @@ namespace LevelSystem
             if (!info.Fixed && info.Door < 0 && c != StageLayout.SignCell) Decorate(g, p, info, rng);
         }
 
-        // ------------------------------------------------------------------ random decoration
-
         static void Decorate(Transform g, OfficePalette p, CellInfo info, System.Random rng)
         {
             var sides = new List<int>();
@@ -139,7 +127,7 @@ namespace LevelSystem
 
             if (sides.Count == 2 && sides[1] - sides[0] == 2)
             {
-                // Straight piece: something on one of the two walls.
+
                 int side = sides[rng.Next(2)];
                 float shift = (float)(rng.NextDouble() - 0.5) * 0.6f;
                 if (roll < 0.2) WallPoster(g, p, side, shift, rng);
@@ -150,7 +138,7 @@ namespace LevelSystem
             }
             else if (sides.Count == 2)
             {
-                // Corner: something standing in it.
+
                 var corner = (Dir(sides[0]) + Dir(sides[1])) * (Half - WallThickness / 2f - 0.32f);
                 if (roll < 0.25) Decor.CornerPlant(g, p, corner);
                 else if (roll < 0.37) Decor.Bin(g, p, corner, 0.16f, 0.4f);
@@ -159,7 +147,7 @@ namespace LevelSystem
 
             if (rng.NextDouble() < 0.2)
             {
-                // Off-centre, clear of the light panel whichever way it runs.
+
                 var spot = new Vector3(rng.Next(2) == 0 ? -0.6f : 0.6f, Height - 0.007f, rng.Next(2) == 0 ? -0.55f : 0.55f);
                 Prims.Flat("Vent", g, spot, new Vector3(0.4f, 0.014f, 0.4f), p.whitePlastic);
                 for (int i = 0; i < 4; i++)
@@ -167,7 +155,6 @@ namespace LevelSystem
             }
         }
 
-        /// <summary>Point on the floor at the wall face of a side, moved along the wall by shift.</summary>
         static Vector3 WallFloor(int side, float shift)
         {
             var dir = Dir(side);
@@ -175,7 +162,6 @@ namespace LevelSystem
             return dir * (Half - WallThickness / 2f) + along * shift;
         }
 
-        /// <summary>Yaw that turns local +Z away from the wall of a side (into the corridor).</summary>
         static float WallYaw(int side)
         {
             var inward = -Dir(side);

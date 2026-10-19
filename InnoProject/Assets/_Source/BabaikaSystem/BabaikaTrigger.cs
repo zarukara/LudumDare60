@@ -3,10 +3,7 @@ using UnityEngine.Events;
 
 namespace BabaikaSystem
 {
-    /// <summary>
-    /// A scripted moment: when the player walks into this trigger, the Babaika appears at the start of the route,
-    /// runs along it and, if asked, vanishes at the end. <see cref="Fire"/> starts it from code or a UnityEvent too.
-    /// </summary>
+
     [RequireComponent(typeof(Collider))]
     public class BabaikaTrigger : MonoBehaviour
     {
@@ -29,7 +26,7 @@ namespace BabaikaSystem
         void OnTriggerEnter(Collider other)
         {
             if (once && fired) return;
-            if (other.GetComponentInParent<CharacterController>() == null) return; // only the player walks with one
+            if (other.GetComponentInParent<CharacterController>() == null) return;
             Fire();
         }
 

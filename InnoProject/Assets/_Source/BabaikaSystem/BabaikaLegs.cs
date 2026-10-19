@@ -5,13 +5,7 @@ using UnityEngine;
 
 namespace BabaikaSystem
 {
-    /// <summary>
-    /// Procedural legs of the <see cref="Babaika"/>. Every leg looks for the surface nearest to where it would like
-    /// to be (floor, wall, ceiling, furniture: any collider on <see cref="surfaces"/>), plants its claws there and
-    /// steps on once the body has moved away. Neighbouring legs never step together, so the six legs alternate
-    /// like two tripods and the head is always held. Legs with nothing in reach hang in the air and grope.
-    /// Each leg is a two-bone IK chain: hip and knee point their +Z along the segment and bend around +X.
-    /// </summary>
+
     [DefaultExecutionOrder(100)]
     [RequireComponent(typeof(Babaika))]
     public class BabaikaLegs : MonoBehaviour
@@ -45,7 +39,6 @@ namespace BabaikaSystem
         [Range(0f, 1f)] public float clawVolume = 0.4f;
         public Vector2 clawPitch = new Vector2(1.5f, 1.9f);
 
-        /// <summary>Fired when a leg plants its claws: leg index and the point it holds.</summary>
         public event Action<int, Vector3> Planted;
 
         [Serializable]
@@ -113,8 +106,6 @@ namespace BabaikaSystem
             if (body != null) body.Teleported -= Replant;
         }
 
-        // ------------------------------------------------------------------ setup
-
         void FindLegs()
         {
             foreach (var t in GetComponentsInChildren<Transform>(true))
@@ -140,7 +131,6 @@ namespace BabaikaSystem
             leg.seed = UnityEngine.Random.value * 100f;
         }
 
-        /// <summary>Same side front/back, and the leg across: those may not step together.</summary>
         void LinkNeighbours()
         {
             for (int i = 0; i < legs.Count; i++)
@@ -158,7 +148,6 @@ namespace BabaikaSystem
             }
         }
 
-        /// <summary>Plants every leg at once around the current place (after a teleport or on start).</summary>
         public void Replant()
         {
             foreach (var leg in legs)
@@ -172,8 +161,6 @@ namespace BabaikaSystem
             }
         }
 
-        // ------------------------------------------------------------------ per frame
-
         void LateUpdate()
         {
             float dt = Time.deltaTime;
@@ -186,7 +173,6 @@ namespace BabaikaSystem
             Vector3 velocity = body.Velocity;
             Vector3 lead = moving ? Vector3.ClampMagnitude(velocity * stepTime + velocity.normalized * (stepDistance * 0.45f), stepDistance) : Vector3.zero;
 
-            // Where would each leg hold now, and how badly does it want to get there?
             order.Clear();
             for (int i = 0; i < legs.Count; i++)
             {
@@ -213,19 +199,17 @@ namespace BabaikaSystem
             foreach (var leg in legs) Pose(leg, dt);
         }
 
-        /// <summary>Above 1 the leg should step: it is far from its hold, out of reach, or can grab something.</summary>
         float Urgency(Leg leg, bool moving, float stepDistance)
         {
             if (leg.stepping) return 0f;
             float reach = leg.Reach(reachUse);
             float stretch = Vector3.Distance(leg.hip.position, leg.foot) / reach;
             if (leg.gripping && stretch > 1.04f) return 10f + stretch;
-            // Something came between the body and the claws (a door slammed, she went round a corner): let go.
+
             if (leg.gripping && Blocked(SteadyHip(leg), leg.foot)) return 9f;
             if (!leg.hold.found) return 0f;
             if (!leg.gripping) return 5f;
-            // How much closer to where the leg wants to be the new hold is. A hold that is merely different
-            // (another surface just as good) is not worth a step.
+
             float gain = Vector3.Distance(leg.foot, leg.ideal) - Vector3.Distance(leg.hold.point, leg.ideal);
             float threshold = moving ? stepDistance : stepDistance * 0.6f;
             return gain / threshold;
@@ -251,7 +235,6 @@ namespace BabaikaSystem
             leg.toGrip = grip;
         }
 
-        /// <summary>While standing, now and then one leg shifts its grip a little: it never stays quite still.</summary>
         void Fidget(float dt, float stepTime)
         {
             fidgetTimer -= dt;
@@ -298,8 +281,7 @@ namespace BabaikaSystem
 
         void Pose(Leg leg, float dt)
         {
-            // Knees go up and out like a spider's, unless that puts a leg through a wall or a door: then the first
-            // bend that keeps both segments clear (the last good one is kept while it stays clear).
+
             Vector3 up = transform.up;
             Vector3 outward = Vector3.ProjectOnPlane(leg.hip.position - transform.position, up);
             outward = outward.sqrMagnitude > 1e-6f ? outward.normalized : Vector3.zero;
@@ -334,7 +316,6 @@ namespace BabaikaSystem
             leg.wrist.rotation = leg.hand;
         }
 
-        /// <summary>Claws flat on the surface, pointing on along the forearm.</summary>
         Quaternion Grip(Vector3 forearm, Vector3 normal, Leg leg)
         {
             Vector3 forward = Vector3.ProjectOnPlane(forearm, normal);
@@ -344,7 +325,6 @@ namespace BabaikaSystem
             return Quaternion.LookRotation(forward.normalized, normal);
         }
 
-        /// <summary>Two-bone IK: the knee goes towards the pole, the hip and knee keep their bend around +X.</summary>
         void Solve(Leg leg, Vector3 target, Vector3 pole, out Vector3 lowerDirection, out Vector3 bendNormal)
         {
             Chain(leg, target, pole, out Vector3 knee, out Vector3 wrist, out Vector3 direction, out Vector3 bend);
@@ -355,7 +335,6 @@ namespace BabaikaSystem
             leg.knee.rotation = Quaternion.LookRotation(lowerDirection, Vector3.Cross(lowerDirection, bendNormal));
         }
 
-        /// <summary>Where the knee and wrist go for this target and pole (law of cosines).</summary>
         void Chain(Leg leg, Vector3 target, Vector3 pole, out Vector3 knee, out Vector3 wrist, out Vector3 direction, out Vector3 bend)
         {
             Vector3 hip = leg.hip.position;
@@ -371,7 +350,6 @@ namespace BabaikaSystem
             wrist = hip + direction * distance;
         }
 
-        /// <summary>With this pole neither segment goes through anything (the last bit at the claws is not checked).</summary>
         bool ClearBend(Leg leg, int pole)
         {
             Chain(leg, leg.foot, poles[pole], out Vector3 knee, out Vector3 wrist, out _, out _);
@@ -379,7 +357,6 @@ namespace BabaikaSystem
             return !Blocked(leg.hip.position, knee) && !Blocked(knee, claws);
         }
 
-        /// <summary>Something solid (not the player, not the Babaika itself) lies between two points.</summary>
         bool Blocked(Vector3 from, Vector3 to)
         {
             Vector3 line = to - from;
@@ -398,19 +375,14 @@ namespace BabaikaSystem
         static readonly RaycastHit[] Hits = new RaycastHit[8];
         readonly Vector3[] poles = new Vector3[6];
 
-        // ------------------------------------------------------------------ surfaces
-
         static readonly Vector2[] Fan =
         {
             new Vector2(0f, 0f), new Vector2(35f, 0f), new Vector2(-35f, 0f), new Vector2(0f, 35f),
             new Vector2(0f, -35f), new Vector2(0f, -70f), new Vector2(60f, 20f), new Vector2(-60f, 20f),
         };
 
-        /// <summary>The hip where the rest pose has it: holds are searched from here, so the bobbing and
-        /// twitching head does not make the legs change their minds.</summary>
         Vector3 SteadyHip(Leg leg) => transform.TransformPoint(leg.restHip);
 
-        /// <summary>The leg's preferred direction: its rest pose, tilted up by <see cref="aimUp"/>.</summary>
         Vector3 Aim(Leg leg)
         {
             Vector3 direction = transform.TransformDirection(leg.restDirection);
@@ -420,7 +392,6 @@ namespace BabaikaSystem
 
         Vector3 IdealPoint(Leg leg, Vector3 lead) => SteadyHip(leg) + Aim(leg) * leg.restReach + lead;
 
-        /// <summary>The reachable surface point closest to where the leg would like to be.</summary>
         public Hold FindHold(Leg leg, Vector3 lead)
         {
             Vector3 hip = SteadyHip(leg);
@@ -439,13 +410,11 @@ namespace BabaikaSystem
                 Vector3 direction = Quaternion.AngleAxis(fan.x, transform.up) * (Quaternion.AngleAxis(fan.y, side) * aim);
                 Consider(new Ray(hip, direction), reach + clawLift + 0.2f, leg, hip, ideal, reach, ref best, ref bestScore);
             }
-            // Straight down onto the floor under the ideal point; that one may lie beyond a wall or a door, so it
-            // only counts when the hip can see it.
+
             Consider(new Ray(ideal + transform.up * 0.9f, -transform.up), 2.2f, leg, hip, ideal, reach, ref best, ref bestScore, true);
             Consider(new Ray(hip, -transform.up), reach + clawLift, leg, hip, ideal, reach, ref best, ref bestScore);
             if (best.found) return best;
 
-            // Nothing near the rest pose (under a ceiling, in a corner): grab whatever is in reach.
             foreach (var direction in AllAround)
             {
                 Consider(new Ray(hip, transform.TransformDirection(direction)), reach + clawLift, leg, hip, ideal, reach, ref best, ref bestScore);
@@ -479,7 +448,6 @@ namespace BabaikaSystem
             best = new Hold { found = true, point = point, normal = hit.normal };
         }
 
-        /// <summary>Where a leg with nothing to hold hangs: its rest direction, groping slowly.</summary>
         Vector3 AirPoint(Leg leg, Vector3 lead)
         {
             float time = Time.time;

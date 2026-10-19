@@ -4,16 +4,12 @@ using UnityEngine.Rendering;
 
 namespace LevelSystem
 {
-    /// <summary>
-    /// Building blocks for the level. Boxes get their own meshes whose UVs are in metres (cached per size), so a
-    /// texture keeps the same scale on every floor, wall and desk. Cylinders and spheres are Unity primitives.
-    /// </summary>
+
     public static class Prims
     {
         static readonly Dictionary<Vector3Int, Mesh> boxMeshes = new Dictionary<Vector3Int, Mesh>();
         static readonly Dictionary<Vector3Int, Mesh> frustumMeshes = new Dictionary<Vector3Int, Mesh>();
 
-        /// <summary>Forgets the cached meshes (the editor saves them into an asset before reusing them).</summary>
         public static void ClearCache()
         {
             boxMeshes.Clear();
@@ -42,7 +38,6 @@ namespace LevelSystem
             return go;
         }
 
-        /// <summary>Box without shadows or collider (glowing panels, thin decals).</summary>
         public static GameObject Flat(string name, Transform parent, Vector3 center, Vector3 size, Material mat, Vector3? euler = null)
         {
             var go = Box(name, parent, center, size, mat, false, euler);
@@ -50,7 +45,6 @@ namespace LevelSystem
             return go;
         }
 
-        /// <summary>Upright cylinder (Unity primitive) given radius and height; set euler to lay it down.</summary>
         public static GameObject Cylinder(string name, Transform parent, Vector3 center, float radius, float height, Material mat, bool collider = false, Vector3? euler = null) =>
             Primitive(PrimitiveType.Cylinder, name, parent, center, new Vector3(radius * 2f, height / 2f, radius * 2f), mat, collider, euler);
 
@@ -60,17 +54,12 @@ namespace LevelSystem
         public static GameObject Capsule(string name, Transform parent, Vector3 center, Vector3 size, Material mat, bool collider = false, Vector3? euler = null) =>
             Primitive(PrimitiveType.Capsule, name, parent, center, size, mat, collider, euler);
 
-        /// <summary>Thin box from a to b (rods, tripod legs, wires).</summary>
         public static GameObject Segment(string name, Transform parent, Vector3 a, Vector3 b, float thickness, Material mat)
         {
             Vector3 d = b - a;
             return Box(name, parent, (a + b) / 2f, new Vector3(thickness, thickness, d.magnitude), mat, false, Quaternion.LookRotation(d).eulerAngles);
         }
 
-        /// <summary>
-        /// Open, double-sided truncated cone (a gramophone horn, a lamp shade): radius r0 at the base point, r1 at
-        /// <paramref name="height"/> along the local Y axis turned by <paramref name="euler"/>.
-        /// </summary>
         public static GameObject Frustum(string name, Transform parent, Vector3 basePoint, float r0, float r1, float height, Material mat, Vector3 euler)
         {
             var go = new GameObject(name, typeof(MeshFilter), typeof(MeshRenderer));
@@ -96,7 +85,7 @@ namespace LevelSystem
                 var t0 = new Vector3(Mathf.Cos(a0) * r1, height, Mathf.Sin(a0) * r1);
                 var t1 = new Vector3(Mathf.Cos(a1) * r1, height, Mathf.Sin(a1) * r1);
                 int k = verts.Count;
-                verts.AddRange(new[] { b0, t0, t1, b1, b0, b1, t1, t0 }); // outside, then inside
+                verts.AddRange(new[] { b0, t0, t1, b1, b0, b1, t1, t0 });
                 tris.AddRange(new[] { k, k + 1, k + 2, k, k + 2, k + 3, k + 4, k + 5, k + 6, k + 4, k + 6, k + 7 });
             }
             var mesh = new Mesh { name = $"Frustum_{key.x}_{key.y}_{key.z}" };
@@ -109,7 +98,6 @@ namespace LevelSystem
             return mesh;
         }
 
-        /// <summary>Flat picture whose visible side faces <paramref name="facing"/> (screens, posters, signs).</summary>
         public static GameObject Quad(string name, Transform parent, Vector3 center, Vector2 size, Vector3 facing, Material mat, float roll = 0f)
         {
             var go = Primitive(PrimitiveType.Quad, name, parent, center, new Vector3(size.x, size.y, 1f), mat, false, null);
@@ -118,7 +106,6 @@ namespace LevelSystem
             return go;
         }
 
-        /// <summary>3D text readable from the <paramref name="facing"/> side; lineHeight is in metres.</summary>
         public static TextMesh Text(string name, Transform parent, Vector3 position, Vector3 facing, string text, float lineHeight,
             Color color, Material mat, TextAnchor anchor = TextAnchor.MiddleCenter)
         {
@@ -191,7 +178,6 @@ namespace LevelSystem
             return go;
         }
 
-        /// <summary>Centred box mesh with flat faces; each face is mapped 1 UV unit = 1 metre, V pointing up on walls.</summary>
         public static Mesh BoxMesh(Vector3 size)
         {
             var key = new Vector3Int(Mathf.RoundToInt(size.x * 1000f), Mathf.RoundToInt(size.y * 1000f), Mathf.RoundToInt(size.z * 1000f));
@@ -203,7 +189,6 @@ namespace LevelSystem
             var uvs = new List<Vector2>(24);
             var tris = new List<int>(36);
 
-            // For every face: outward normal n and in-face axes u, v with Cross(v, u) == n, so the winding faces out.
             void Face(Vector3 n, Vector3 u, Vector3 v)
             {
                 float hn = Mathf.Abs(Vector3.Dot(h, n)), hu = Mathf.Abs(Vector3.Dot(h, u)), hv = Mathf.Abs(Vector3.Dot(h, v));

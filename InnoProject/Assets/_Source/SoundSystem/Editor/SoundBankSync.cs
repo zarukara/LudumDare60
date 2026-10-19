@@ -6,10 +6,7 @@ using UnityEngine;
 
 namespace SoundSystem.EditorTools
 {
-    /// <summary>
-    /// Fills every <see cref="SoundBank"/>'s slots from the audio files in its folder (and subfolders), matched by
-    /// file name: "door_bang.wav", "door_bang_2.wav" and "door_bang (3).ogg" all go to the slot "door_bang".
-    /// </summary>
+
     public class SoundBankSync : AssetPostprocessor
     {
         static readonly Regex Numbered = new Regex(@"[\s_\-]*\(?\d+\)?$");
@@ -29,7 +26,6 @@ namespace SoundSystem.EditorTools
             return ext == ".wav" || ext == ".ogg" || ext == ".mp3" || ext == ".aif" || ext == ".aiff" || ext == ".flac";
         }
 
-        /// <summary>The slot a file belongs to: its name in lower case without a trailing number.</summary>
         public static string SlotOf(string fileName) => Numbered.Replace(Path.GetFileNameWithoutExtension(fileName).ToLowerInvariant(), "");
 
         [MenuItem("Assets/Sync Sound Banks")]

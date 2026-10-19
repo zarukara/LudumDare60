@@ -2,11 +2,7 @@ using UnityEngine;
 
 namespace LevelSystem
 {
-    /// <summary>
-    /// Old tech that should not be in a modern office: the anomalies of the game. Simple stand-ins built from
-    /// primitives; each is a group standing on its surface (floor or desk top) with its front along local +Z.
-    /// Artists can replace the children with real models later, the anomaly logic only toggles the group.
-    /// </summary>
+
     public static class OldTech
     {
         public static Transform CrtTelevision(Transform parent, OfficePalette p, Vector3 floor, float yaw)
@@ -117,7 +113,6 @@ namespace LevelSystem
             return g;
         }
 
-        /// <summary>Gramophone on a small round table (stands on the floor).</summary>
         public static Transform Gramophone(Transform parent, OfficePalette p, Vector3 floor, float yaw)
         {
             var g = Prims.Group("Gramophone", parent, floor, yaw);
@@ -134,7 +129,6 @@ namespace LevelSystem
             return g;
         }
 
-        /// <summary>Old film camera with two reels on a wooden tripod (stands on the floor).</summary>
         public static Transform FilmCamera(Transform parent, OfficePalette p, Vector3 floor, float yaw)
         {
             var g = Prims.Group("Film_Camera", parent, floor, yaw);

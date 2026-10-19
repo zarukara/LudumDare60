@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace LevelSystem
 {
-    /// <summary>Puts a stage together: corridors from the layout, the office prefab (or exit hall) and the sign.</summary>
+
     public static class StageBuilder
     {
         static readonly Color ExitGreen = new Color(0.3f, 1f, 0.45f);

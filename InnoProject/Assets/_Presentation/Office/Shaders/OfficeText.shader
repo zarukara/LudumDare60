@@ -1,5 +1,3 @@
-// Text Mesh shader that respects depth (the built-in font material draws through walls).
-// The font atlas comes from a MaterialPropertyBlock set by LevelSystem.FontBinder.
 Shader "Office/Text"
 {
     Properties

@@ -4,12 +4,7 @@ using UnityEngine;
 
 namespace SoundSystem
 {
-    /// <summary>
-    /// Named sound slots. Put audio files named after a slot into the bank's folder ("door_slam.wav",
-    /// "door_bang_2.ogg", ...) and they land in that slot by themselves (SoundBankSync); several files in one slot
-    /// play in random order. A slot without files plays the files of its fallback slot, its rough generated
-    /// placeholder, or nothing.
-    /// </summary>
+
     [CreateAssetMenu(menuName = "Sound/Sound Bank", fileName = "SoundBank")]
     public class SoundBank : ScriptableObject
     {
@@ -46,7 +41,6 @@ namespace SoundSystem
 
         public Slot Find(string slotName) => slots.Find(s => s.name == slotName);
 
-        /// <summary>A random clip of the slot (never the same twice in a row), its fallback slot's, its placeholder, or null.</summary>
         public AudioClip Pick(string slotName, out Slot slot)
         {
             slot = Find(slotName);
@@ -72,7 +66,6 @@ namespace SoundSystem
             return null;
         }
 
-        /// <summary>One-shot from a point in the world. Returns the clip played, or null.</summary>
         public AudioClip PlayAt(string slotName, Vector3 position, float volume = 1f)
         {
             var clip = Pick(slotName, out var slot);
@@ -89,7 +82,6 @@ namespace SoundSystem
             return clip;
         }
 
-        /// <summary>One-shot on a source (2D or 3D as the source is set up). Returns the clip played, or null.</summary>
         public AudioClip PlayOn(AudioSource source, string slotName, float volume = 1f)
         {
             if (source == null) return null;
@@ -100,7 +92,6 @@ namespace SoundSystem
             return clip;
         }
 
-        /// <summary>A looping source on <paramref name="host"/> playing the slot, or null when the slot is silent.</summary>
         public AudioSource StartLoop(string slotName, GameObject host, bool spatial, float volume = 1f)
         {
             var clip = Pick(slotName, out var slot);
@@ -116,8 +107,6 @@ namespace SoundSystem
             return source;
         }
 
-        // ------------------------------------------------------------------ placeholders
-
         static AudioClip PlaceholderClip(Placeholder kind)
         {
             if (kind == SoundBank.Placeholder.None) return null;
@@ -127,7 +116,6 @@ namespace SoundSystem
             return clip;
         }
 
-        /// <summary>Rough synthesized stand-ins, so the scares work before the real sounds are chosen.</summary>
         static AudioClip Generate(Placeholder kind)
         {
             const int rate = 44100;
@@ -176,7 +164,7 @@ namespace SoundSystem
                         v = (mid * 0.5f + low * 1.5f) * Mathf.Sin(Mathf.Clamp01(t / seconds) * Mathf.PI) * (0.6f + 0.4f * Mathf.Sin(t * 23f));
                         break;
                     case SoundBank.Placeholder.Rewind:
-                        // A tape motor whining at speed over hiss; whole cycles in the 2 s, so it loops.
+
                         float whine = Mathf.Sin(t * Mathf.PI * 2f * 180f) * 0.25f + Mathf.Sin(t * Mathf.PI * 2f * 360f) * 0.12f + Mathf.Sin(t * Mathf.PI * 2f * 545f) * 0.06f;
                         v = (whine * (0.8f + 0.2f * Mathf.Sin(t * Mathf.PI * 2f * 7f)) + mid * 0.3f + low * 0.6f) * 0.6f;
                         break;
