@@ -49,8 +49,8 @@ namespace ScareSystem
             var root = new GameObject("Gore").transform;
             root.SetParent(room, false);
 
-            // The people who worked here, still at their desks. The first one has turned to face the door: under the
-            // same warm light from above that marks anomalies, the eye finds it at once.
+            // The people who worked here, still at their desks. The first one has turned to face the door: under a
+            // warm light from above, the eye finds it at once.
             var look = Sitter(root, kit, rng, room, "Desk_W2", FlayedBody.Pose.ThrownBack) ?? room.TransformPoint(new Vector3(4f, 1f, 5f));
             Sitter(root, kit, rng, room, "Desk_W3", FlayedBody.Pose.OnDesk);
             Sitter(root, kit, rng, room, "Desk_W4", FlayedBody.Pose.Slumped);

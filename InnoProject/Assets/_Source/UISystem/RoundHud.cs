@@ -4,14 +4,15 @@ using RoundSystem;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 namespace UISystem
 {
     /// <summary>
     /// Placeholder on-screen text until the real UI. At the start of a run: "F — flashlight" (until the torch is
     /// switched on) and "go to the whiteboard and read it" (until the player gets near the board, which explains
-    /// the rules). At the bottom of the exit stairs: a fade to black with the time, R to play again, M for the menu.
-    /// F3: debug line.
+    /// the rules). When the player is out: a fade to black and the tape's end card, "The End, Thanks For Playing"
+    /// with a blinking "Space: Return to Menu", in the VCR look (<see cref="VhsUi"/>). F3: debug line.
     /// </summary>
     public class RoundHud : MonoBehaviour
     {
@@ -22,7 +23,9 @@ namespace UISystem
 
         bool showFlashlightHint, showBoardHint, finished, debug;
         float whiteOut;
-        GUIStyle title, body, hint, small;
+        GUIStyle hint, small;
+        Image black;
+        Text endTitle, endMenu;
 
         void OnEnable()
         {
@@ -44,6 +47,8 @@ namespace UISystem
             showBoardHint = true;
             whiteOut = 0f;
             finished = false;
+            if (black != null) Destroy(black.canvas.gameObject);
+            black = null;
         }
 
         void OnExitReached() => finished = true;
@@ -58,10 +63,29 @@ namespace UISystem
             if (showBoardHint && NearBoard()) showBoardHint = false;
 
             if (!finished) return;
-            whiteOut = Mathf.MoveTowards(whiteOut, 1f, Time.deltaTime / 1.5f);
-            if (whiteOut < 1f || keyboard == null) return;
-            if (keyboard.rKey.wasPressedThisFrame) round.Restart();
-            else if (keyboard.mKey.wasPressedThisFrame && Application.CanStreamedLevelBeLoaded(menuScene)) SceneManager.LoadScene(menuScene);
+            if (black == null) BuildEndCard();
+            whiteOut = Mathf.MoveTowards(whiteOut, 1f, Time.unscaledDeltaTime / 1.5f);
+            black.color = new Color(0f, 0f, 0f, whiteOut);
+            float words = Mathf.Clamp01((whiteOut - 0.8f) * 5f);
+            endTitle.color = new Color(1f, 1f, 1f, words);
+            endMenu.color = new Color(1f, 1f, 1f, words * (VhsUi.BlinkOn ? 1f : 0.15f));
+            if (whiteOut < 1f) return;
+            bool back = (keyboard != null && keyboard.spaceKey.wasPressedThisFrame)
+                        || (Gamepad.current != null && (Gamepad.current.buttonSouth.wasPressedThisFrame || Gamepad.current.startButton.wasPressedThisFrame));
+            if (back && Application.CanStreamedLevelBeLoaded(menuScene)) SceneManager.LoadScene(menuScene);
+        }
+
+        /// <summary>Black over everything, the tape stopped, and the end card's two lines.</summary>
+        void BuildEndCard()
+        {
+            var canvas = VhsUi.NewCanvas("End_Card", transform, 300);
+            black = VhsUi.Fill(canvas, "Black", new Color(0f, 0f, 0f, 0f));
+            var stop = VhsUi.Label(canvas, null, "STOP ■", 46, TextAnchor.UpperLeft, new Vector2(80f, -60f), VhsUi.Bright);
+            stop.rectTransform.anchorMin = stop.rectTransform.anchorMax = new Vector2(0f, 1f);
+            stop.rectTransform.anchoredPosition = new Vector2(80f, -60f);
+            endTitle = VhsUi.Label(canvas, "end.title", null, 76, TextAnchor.MiddleCenter, new Vector2(0f, 50f), VhsUi.Bright);
+            endMenu = VhsUi.Label(canvas, "end.menu", null, 36, TextAnchor.MiddleCenter, new Vector2(0f, -90f), VhsUi.Bright);
+            stop.transform.SetAsLastSibling();
         }
 
         bool NearBoard()
@@ -74,16 +98,12 @@ namespace UISystem
         void OnGUI()
         {
             if (round == null) return;
-            if (title == null)
+            if (hint == null)
             {
-                title = new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold };
-                body = new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleCenter, wordWrap = true };
                 hint = new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleCenter };
                 small = new GUIStyle(GUI.skin.label) { alignment = TextAnchor.UpperLeft };
             }
             float scale = Screen.height / 1080f;
-            title.fontSize = Mathf.RoundToInt(64 * scale);
-            body.fontSize = Mathf.RoundToInt(26 * scale);
             hint.fontSize = Mathf.RoundToInt(28 * scale);
             small.fontSize = Mathf.RoundToInt(18 * scale);
 
@@ -99,20 +119,6 @@ namespace UISystem
                 string anomaly = round.CurrentAnomaly != null ? round.CurrentAnomaly.anomalyName : Localization.Get("hud.none");
                 GUI.color = Color.yellow;
                 GUI.Label(new Rect(12f, 10f, 900f, 60f), Localization.Format("hud.debug", round.Progress, round.roundsToWin, anomaly), small);
-            }
-
-            if (finished)
-            {
-                GUI.color = new Color(0f, 0f, 0f, whiteOut);
-                GUI.DrawTexture(new Rect(0f, 0f, Screen.width, Screen.height), Texture2D.whiteTexture);
-                if (whiteOut >= 1f)
-                {
-                    GUI.color = new Color(0.78f, 0.76f, 0.72f);
-                    int seconds = Mathf.FloorToInt(round.RunTime);
-                    GUI.Label(new Rect(0f, Screen.height * 0.35f, Screen.width, Screen.height * 0.12f), Localization.Get("hud.finish"), title);
-                    GUI.Label(new Rect(0f, Screen.height * 0.48f, Screen.width, Screen.height * 0.12f),
-                        Localization.Format("hud.time", $"{seconds / 60}:{seconds % 60:00}") + "\n\n" + Localization.Get("hud.again"), body);
-                }
             }
             GUI.color = Color.white;
         }

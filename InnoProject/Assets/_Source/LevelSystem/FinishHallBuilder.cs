@@ -16,13 +16,32 @@ namespace LevelSystem
     {
         static readonly Color NumberColor = new Color(0.62f, 0.12f, 0.1f);
 
+        enum Cover
+        {
+            None,
+            Cart,
+            Nightstand,
+            Wardrobe,
+        }
+
+        /// <summary>
+        /// What there is to hide behind or in on each floor (by floor number): on the way down from the door in, the
+        /// cart first, then the wardrobe, then the nightstand; nothing on the 4th, where she comes down and chases the
+        /// player; below it the same three again.
+        /// </summary>
+        static readonly Cover[] Covers =
+        {
+            Cover.None, Cover.Nightstand, Cover.Wardrobe, Cover.Cart, Cover.None, Cover.Nightstand, Cover.Wardrobe, Cover.Cart, Cover.None, Cover.None,
+        };
+
         public static GameObject Build(Transform parent, OfficePalette p, Vector3 origin, out Bounds finishZone)
         {
             var root = Prims.Group("Exit_Stairs", parent, origin);
             var well = root.gameObject.AddComponent<Stairwell>();
+            well.palette = p;
             well.glow = new Material(p.lightPanel) { name = "Stairwell_Lamp_Glow" };
             for (int floor = Stairwell.Attic; floor >= Stairwell.Basement; floor--)
-                well.floors[floor] = Floor(root, well, p, floor).gameObject;
+                well.floors[floor] = Floor(root, well, p, floor, Covers[floor]).gameObject;
 
             float bottom = Stairwell.FloorY(Stairwell.Basement);
             finishZone = new Bounds(origin + new Vector3(Stairwell.Split, bottom + 1.1f, Stairwell.LandingDepth / 2f),
@@ -31,7 +50,7 @@ namespace LevelSystem
         }
 
         /// <summary>One floor: its landing, the walls up to the next one, and the flights from it down to the floor below.</summary>
-        static Transform Floor(Transform root, Stairwell well, OfficePalette p, int floor)
+        static Transform Floor(Transform root, Stairwell well, OfficePalette p, int floor, Cover cover)
         {
             var g = Prims.Group("Floor_" + floor, root, new Vector3(0f, Stairwell.FloorY(floor), 0f));
             Walls(g, p, floor);
@@ -39,8 +58,14 @@ namespace LevelSystem
             if (floor > Stairwell.Basement) Flights(g, well, p);
             if (floor >= 1 && floor <= Stairwell.Top)
             {
-                if (floor < Stairwell.Top) well.covers[floor] = Cart(g, p); // the way in is left clear
-                well.numbers[floor] =Prims.Text("Floor_Number", g, new Vector3(Stairwell.CartX, 1.8f, 0.012f), Vector3.forward, floor.ToString(), 0.7f, NumberColor, p.text);
+                var spot = cover == Cover.Cart ? Cart(g, p) : cover == Cover.Nightstand ? Nightstand(g, p) : cover == Cover.Wardrobe ? Wardrobe(g, p) : null;
+                if (spot != null) well.covers[floor] = spot;
+                well.numbers[floor] = Prims.Text("Floor_Number", g, new Vector3(Stairwell.NumberX, 1.8f, 0.012f), Vector3.forward, floor.ToString(), 0.7f, NumberColor, p.text);
+                // Off until the player has come down to this landing: then the way back up is shut (Stairwell.ShutWaysUp).
+                const float flight = Stairwell.Split - Stairwell.MiddleWall / 2f - Stairwell.West;
+                var wayUp = EscapeBuilder.Barrier(g, "No_Way_Up", new Vector3(Stairwell.WestFlight, 1.8f, Stairwell.LandingDepth + 0.8f), new Vector3(flight, 3.6f, 0.1f));
+                wayUp.SetActive(false);
+                well.waysUp[floor] = wayUp;
                 Lamp(well, g, p, "Lamp_Landing", new Vector3(Stairwell.CartX, 2.95f, 0f), 0f);
             }
             if (floor == Stairwell.Top) Grate(g, p);
@@ -176,6 +201,71 @@ namespace LevelSystem
             var spot = cart.gameObject.AddComponent<HidingSpot>();
             spot.seat = Prims.Group("Seat", cart, new Vector3(0f, 0f, -0.55f));
             spot.exit = Prims.Group("Exit", cart, new Vector3(1.4f, 0f, -0.15f));
+            spot.hintKey = "hint.hideCart";
+            return spot;
+        }
+
+        /// <summary>A heavy wooden bedside cabinet pulled out from the wall, a lamp and a book on top. The player crouches behind it.</summary>
+        static HidingSpot Nightstand(Transform g, OfficePalette p)
+        {
+            const float w = 1f, d = 0.5f, h = 0.76f;
+            var stand = Prims.Group("Nightstand", g, new Vector3(Stairwell.CartX, 0f, 1.1f));
+            Prims.Box("Body", stand, new Vector3(0f, (h + 0.06f) / 2f, d / 2f), new Vector3(w, h - 0.06f, d), p.wood);
+            Prims.Box("Plinth", stand, new Vector3(0f, 0.03f, d / 2f), new Vector3(w - 0.04f, 0.06f, d - 0.04f), p.darkPlastic, false);
+            Prims.Box("Top", stand, new Vector3(0f, h + 0.015f, d / 2f), new Vector3(w + 0.03f, 0.03f, d + 0.03f), p.wood, false);
+            // Facing the stairs: two drawers on the left, a door on the right.
+            foreach (float y in new[] { 0.6f, 0.38f })
+            {
+                Prims.Box("Drawer", stand, new Vector3(-0.25f, y, d + 0.01f), new Vector3(0.46f, 0.2f, 0.02f), p.deskTop, false);
+                Prims.Box("Pull", stand, new Vector3(-0.25f, y, d + 0.03f), new Vector3(0.12f, 0.02f, 0.02f), p.brass, false);
+            }
+            Prims.Box("Door", stand, new Vector3(0.25f, 0.42f, d + 0.01f), new Vector3(0.46f, 0.62f, 0.02f), p.deskTop, false);
+            Prims.Sphere("Knob", stand, new Vector3(0.07f, 0.45f, d + 0.035f), Vector3.one * 0.035f, p.brass);
+            Prims.Cylinder("Lamp_Base", stand, new Vector3(0.3f, h + 0.05f, 0.25f), 0.07f, 0.06f, p.brass);
+            Prims.Segment("Lamp_Stem", stand, new Vector3(0.3f, h + 0.08f, 0.25f), new Vector3(0.3f, h + 0.3f, 0.25f), 0.02f, p.brass);
+            Prims.Frustum("Lamp_Shade", stand, new Vector3(0.3f, h + 0.26f, 0.25f), 0.14f, 0.08f, 0.18f, p.whitePlastic, Vector3.zero);
+            Prims.Box("Book", stand, new Vector3(-0.22f, h + 0.05f, 0.24f), new Vector3(0.22f, 0.04f, 0.3f), p.red, false, new Vector3(0f, 14f, 0f));
+
+            var spot = stand.gameObject.AddComponent<HidingSpot>();
+            spot.seat = Prims.Group("Seat", stand, new Vector3(0f, 0f, -0.6f));
+            spot.exit = Prims.Group("Exit", stand, new Vector3(1.3f, 0f, -0.1f));
+            spot.hintKey = "hint.hideStand";
+            return spot;
+        }
+
+        /// <summary>
+        /// A tall wardrobe against the wall. The player shuts themselves in and looks out through the gap between its
+        /// doors; she may come down off the ceiling and put her eye to that gap.
+        /// </summary>
+        static HidingSpot Wardrobe(Transform g, OfficePalette p)
+        {
+            const float w = 1.1f, d = 0.75f, h = 2.1f, t = 0.03f, gap = 0.035f;
+            var robe = Prims.Group("Wardrobe", g, new Vector3(Stairwell.WardrobeX, 0f, 0f));
+            Prims.Box("Back", robe, new Vector3(0f, h / 2f, t / 2f), new Vector3(w, h, t), p.wood);
+            Prims.Box("Side_L", robe, new Vector3(-w / 2f + t / 2f, h / 2f, d / 2f), new Vector3(t, h, d), p.wood);
+            Prims.Box("Side_R", robe, new Vector3(w / 2f - t / 2f, h / 2f, d / 2f), new Vector3(t, h, d), p.wood);
+            Prims.Box("Top", robe, new Vector3(0f, h - t / 2f, d / 2f), new Vector3(w, t, d), p.wood);
+            Prims.Box("Crown", robe, new Vector3(0f, h + 0.03f, d / 2f + 0.01f), new Vector3(w + 0.06f, 0.06f, d + 0.04f), p.deskTop, false);
+            Prims.Box("Floor", robe, new Vector3(0f, 0.004f, d / 2f), new Vector3(w - 2f * t, 0.008f, d - t), p.wood, false); // stood on: no collider
+            Prims.Segment("Rail", robe, new Vector3(-w / 2f + t, 1.85f, d / 2f), new Vector3(w / 2f - t, 1.85f, d / 2f), 0.025f, p.metal);
+            Prims.Box("Coat", robe, new Vector3(-0.38f, 1.35f, d / 2f), new Vector3(0.08f, 0.9f, 0.5f), p.coat, false);
+
+            // Two doors hinged at the outer edges with a narrow gap between them.
+            float leaf = (w - 2f * t - gap) / 2f;
+            var left = Prims.Group("Door_L", robe, new Vector3(-w / 2f + t, 0f, d));
+            Prims.Box("Leaf", left, new Vector3(leaf / 2f, h / 2f, -0.012f), new Vector3(leaf, h - 0.08f, 0.024f), p.wood);
+            Prims.Box("Handle", left, new Vector3(leaf - 0.05f, 1.05f, 0.012f), new Vector3(0.02f, 0.14f, 0.02f), p.brass, false);
+            var right = Prims.Group("Door_R", robe, new Vector3(w / 2f - t, 0f, d));
+            Prims.Box("Leaf", right, new Vector3(-leaf / 2f, h / 2f, -0.012f), new Vector3(leaf, h - 0.08f, 0.024f), p.wood);
+            Prims.Box("Handle", right, new Vector3(-leaf + 0.05f, 1.05f, 0.012f), new Vector3(0.02f, 0.14f, 0.02f), p.brass, false);
+
+            var spot = robe.gameObject.AddComponent<HidingSpot>();
+            spot.seat = Prims.Group("Seat", robe, new Vector3(0f, 0f, d / 2f - 0.02f));
+            spot.exit = Prims.Group("Exit", robe, new Vector3(0f, 0f, d + 0.65f));
+            spot.eyeDrop = 0.12f;
+            spot.doors = new[] { left, right };
+            spot.peek = Prims.Group("Peek", robe, new Vector3(0f, 1.5f, d + 0.42f));
+            spot.hintKey = "hint.hideCloset";
             return spot;
         }
 

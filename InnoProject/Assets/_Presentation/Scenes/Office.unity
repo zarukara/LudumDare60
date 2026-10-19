@@ -353,15 +353,24 @@ MonoBehaviour:
   tape: {fileID: 64465234}
   startFloor: 7
   rewindFloors: 3
-  crawlSpeedTop: 1
-  crawlSpeedBottom: 1.45
-  arriveDelay: {x: 1.5, y: 3}
+  crawlSpeed: {x: 1.9, y: 2.6}
+  waitBelow: {x: 0.6, y: 1.4}
   seeDistance: 5
   lightDistance: 7.5
+  rewindGrace: 2.5
   breathDistance: 4.6
   stareChance: {x: 0.55, y: 0.95}
   stareTime: {x: 1.6, y: 3.6}
   zoomFov: 40
+  sirenVolume: 0.35
+  chaseFloor: 4
+  descentLandings: 4
+  climbLandings: 4
+  chaseGap: {x: 4.5, y: 1.8}
+  chaseMinSpeed: {x: 2, y: 3.1}
+  chaseMaxSpeed: 6.5
+  chaseCatchGap: 0.6
+  chaseHeadHeight: 2.7
 --- !u!114 &64465234
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -376,7 +385,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ScareSystem.TapeRewind
   player: {fileID: 836928932}
   speed: 10
-  duration: {x: 2.2, y: 6}
+  length: {x: 2, y: 4}
 --- !u!1001 &240252689
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -648,6 +657,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerSystem.PlayerHide
   view: {fileID: 1940549239}
   reach: 2.3
+  nearReach: 1.6
   moveTime: 0.45
   allowed: 1
 --- !u!1 &920396586

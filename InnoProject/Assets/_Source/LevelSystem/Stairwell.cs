@@ -7,8 +7,9 @@ namespace LevelSystem
     /// <summary>
     /// The emergency stairwell at the end of the run, built by <see cref="FinishHallBuilder"/>. The door in from the
     /// offices is on the 8th floor; every floor down to the 1st is the same, only the number on the wall changes:
-    /// a landing with two locked doors and an overturned cleaning cart to hide behind, a flight down to the half
-    /// landing and a flight on down, a solid wall between the two flights. Under the 1st floor is the basement with
+    /// a landing with two locked doors and something to hide behind or in (an overturned cleaning cart, a
+    /// wardrobe, a nightstand), a flight down to the half landing and a flight on down, a solid wall between the
+    /// two flights. Under the 1st floor is the basement with
     /// the way out, above the 8th a locked attic.
     /// Knows where things are on each floor, runs the lamps (steady night light or flashing red alarm) and keeps
     /// only the floors near the camera switched on. Positions are local to this object.
@@ -25,8 +26,10 @@ namespace LevelSystem
         /// <summary>Metres down per metre along a flight.</summary>
         public const float Slope = FlightDrop / Run;
         public const float WestFlight = (West + Split - MiddleWall / 2f) / 2f, EastFlight = (Split + MiddleWall / 2f + East) / 2f;
-        /// <summary>Where the cart lies on every landing (its back edge, towards the stairs from there).</summary>
+        /// <summary>Where the cart lies on a landing (its back edge, towards the stairs from there).</summary>
         public const float CartX = 4.3f, CartZ = 1.05f;
+        /// <summary>The middle of a wardrobe against the south wall, and the floor number painted beside it.</summary>
+        public const float WardrobeX = 3.85f, NumberX = 5f;
         /// <summary>The locked door in the west wall of every landing, its middle.</summary>
         public const float SideDoorZ = 2.8f;
 
@@ -54,11 +57,13 @@ namespace LevelSystem
         public bool Alarm { get; private set; }
 
         // Filled by the builder.
+        internal OfficePalette palette;
         internal Material glow;
         internal readonly List<Light> lamps = new List<Light>();
         internal readonly Dictionary<int, GameObject> floors = new Dictionary<int, GameObject>();
         internal readonly Dictionary<int, HidingSpot> covers = new Dictionary<int, HidingSpot>();
         internal readonly Dictionary<int, TextMesh> numbers = new Dictionary<int, TextMesh>();
+        internal readonly Dictionary<int, GameObject> waysUp = new Dictionary<int, GameObject>();
 
         int shownFrom = int.MinValue, shownTo = int.MinValue;
         float alarmTime;
@@ -89,12 +94,28 @@ namespace LevelSystem
                     to.text = from.text;
         }
 
+        /// <summary>
+        /// Invisible walls across the foot of the flight up from each landing at and above <paramref name="lowest"/>,
+        /// so the player cannot go back up from there; the landings below have theirs open.
+        /// </summary>
+        public void ShutWaysUp(int lowest)
+        {
+            foreach (var pair in waysUp)
+                if (pair.Value != null) pair.Value.SetActive(pair.Key >= lowest);
+        }
+
+        /// <summary>Every flight up open again.</summary>
+        public void OpenWaysUp() => ShutWaysUp(int.MaxValue);
+
         /// <summary>The real floor numbers again.</summary>
         public void ResetNumbers()
         {
             foreach (var pair in numbers)
                 if (pair.Value != null) pair.Value.text = pair.Key.ToString();
         }
+
+        /// <summary>The door in the south wall of a floor's landing (its frame, leaf and hinge), or null.</summary>
+        public Transform FloorDoor(int floor) => floors.TryGetValue(floor, out var g) && g != null ? g.transform.Find("Floor_Door") : null;
 
         /// <summary>The cart to hide behind on this floor, or null.</summary>
         public HidingSpot Cover(int floor) => covers.TryGetValue(floor, out var spot) ? spot : null;
@@ -132,9 +153,19 @@ namespace LevelSystem
         /// Her way past <paramref name="floor"/> along the ceilings, head positions (world). She starts out of sight,
         /// under the ceiling of the flight below behind the middle wall, comes round it at the half landing below, up
         /// along the ceiling of the flight down from this landing, across the landing (<paramref name="stare"/> is
-        /// the point over the cart), up along the ceiling of the flight that comes down to it, and round the middle
-        /// wall at the half landing above, out of sight again.
+        /// the point over the cover, or with a wardrobe, down at the gap between its doors: then she gets off the
+        /// ceiling for it, <paramref name="upright"/>), up along the ceiling of the flight that comes down to it, and
+        /// round the middle wall at the half landing above, out of sight again.
         /// </summary>
+        public Vector3[] Route(int floor, out int stare, out bool upright)
+        {
+            var route = Route(floor, out stare);
+            var cover = Cover(floor);
+            upright = cover != null && cover.Enclosed;
+            if (upright) route[stare] = cover.peek.position;
+            return route;
+        }
+
         public Vector3[] Route(int floor, out int stare)
         {
             const float hang = 0.8f; // head under the ceiling; the legs reach up to it

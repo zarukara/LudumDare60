@@ -29,7 +29,9 @@ namespace AnomalySystem.EditorTools
             if (library == null) return;
             string folder = Path.GetDirectoryName(AssetDatabase.GetAssetPath(library))?.Replace('\\', '/');
             var prefabs = AssetDatabase.FindAssets("t:Prefab", new[] { folder })
-                .Select(g => AssetDatabase.LoadAssetAtPath<GameObject>(AssetDatabase.GUIDToAssetPath(g)))
+                .Select(AssetDatabase.GUIDToAssetPath)
+                .Where(p => p.EndsWith(".prefab")) // not the models the props are made from
+                .Select(p => AssetDatabase.LoadAssetAtPath<GameObject>(p))
                 .Where(p => p != null)
                 .OrderBy(p => p.name)
                 .ToArray();
