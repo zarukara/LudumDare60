@@ -7,11 +7,7 @@ using UnityEngine.UI;
 
 namespace UISystem
 {
-    /// <summary>
-    /// Building blocks for the menus in the look of a VCR's on-screen display: bold white letters with a drop shadow
-    /// and a faint red/blue colour fringe, a blinking green ► at the chosen line, and rows of segments for levels.
-    /// Sizes are in a 1920×1080 reference canvas; positions are from the parent's centre unless anchored otherwise.
-    /// </summary>
+
     public static class VhsUi
     {
         public static readonly Color Bright = new Color(0.95f, 0.97f, 0.95f);
@@ -23,10 +19,8 @@ namespace UISystem
 
         public static Font Font => font != null ? font : font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
 
-        /// <summary>On and off like a VCR menu cursor; runs on real time, so it blinks while the game is paused.</summary>
         public static bool BlinkOn => Time.unscaledTime % 0.8f < 0.55f;
 
-        /// <summary>A screen-space canvas scaled from 1920×1080 by height, drawn above canvases with a lower order.</summary>
         public static RectTransform NewCanvas(string name, Transform parent, int order)
         {
             var go = new GameObject(name, typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
@@ -47,7 +41,6 @@ namespace UISystem
                 new GameObject("EventSystem", typeof(EventSystem), typeof(InputSystemUIInputModule));
         }
 
-        /// <summary>A plain rectangle (no sprite) filling its parent.</summary>
         public static Image Fill(Transform parent, string name, Color color)
         {
             var image = new GameObject(name, typeof(Image)).GetComponent<Image>();
@@ -58,10 +51,6 @@ namespace UISystem
             return image;
         }
 
-        /// <summary>
-        /// One line of OSD text: a localization <paramref name="key"/> or a fixed <paramref name="text"/>. The
-        /// alignment also sets the pivot, so <paramref name="position"/> is where that corner or edge goes.
-        /// </summary>
         public static Text Label(Transform parent, string key, string text, int size, TextAnchor alignment, Vector2 position, Color color)
         {
             var label = new GameObject(key ?? text, typeof(Text)).GetComponent<Text>();
@@ -92,7 +81,6 @@ namespace UISystem
             return label;
         }
 
-        /// <summary>The tape look on any graphic: red and blue ghosts either side and a dark drop shadow.</summary>
         public static void Osd(GameObject graphic, float size)
         {
             float fringe = Mathf.Max(1f, size / 26f);
@@ -108,7 +96,6 @@ namespace UISystem
             shadow.effectDistance = offset;
         }
 
-        /// <summary>A row of <paramref name="count"/> segments left to right inside <paramref name="bar"/>.</summary>
         public static Image[] Segments(RectTransform bar, int count, float gap)
         {
             var segments = new Image[count];
@@ -130,13 +117,11 @@ namespace UISystem
             return segments;
         }
 
-        /// <summary>Lights the first <paramref name="lit"/> segments.</summary>
         public static void LightUp(Image[] segments, int lit)
         {
             for (int i = 0; i < segments.Length; i++) segments[i].color = i < lit ? Accent : Unlit;
         }
 
-        /// <summary>An arrow, WASD, d-pad or stick direction pressed just now (not held from before).</summary>
         public static bool NavigationPressed()
         {
             var k = Keyboard.current;
@@ -150,7 +135,6 @@ namespace UISystem
                                        || pad.leftStick.right.wasPressedThisFrame));
         }
 
-        /// <summary>True while the mouse is over <paramref name="rect"/> and has just moved (hovering picks a line).</summary>
         public static bool Hovered(RectTransform rect)
         {
             var mouse = Mouse.current;

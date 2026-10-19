@@ -2,14 +2,7 @@ using UnityEngine;
 
 namespace PlayerSystem
 {
-    /// <summary>
-    /// The player's own body, seen when looking down. The legs walk in step with the <see cref="PlayerController"/>
-    /// (one step per stepLength), the arms swing against them, and the body's right arm hides while the torch hand
-    /// (<see cref="Flashlight.viewmodel"/>) is up. Joints are found by name: Pelvis, Leg_L/R (_Knee, _Ankle),
-    /// Arm_L/R (_Elbow). Lives under the player root, a little behind the camera, so looking down shows the
-    /// shirt, the tie and the shoes instead of the inside of the chest. Hidden while crouching behind cover, where
-    /// the eyes would be inside it.
-    /// </summary>
+
     public class PlayerBody : MonoBehaviour
     {
         public PlayerController controller;
@@ -67,7 +60,6 @@ namespace PlayerSystem
             float amount = pace * (1f + 0.45f * run);
             float s = Mathf.Sin(phase), c = Mathf.Cos(phase);
 
-            // Negative X swings a hanging limb forward, positive back.
             float thighL = -legSwing * amount * s, thighR = legSwing * amount * s;
             float bendL = kneeBend * amount * Mathf.Max(0f, c), bendR = kneeBend * amount * Mathf.Max(0f, -c);
             Pose(legL, legLRest, thighL);

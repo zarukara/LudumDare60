@@ -61,14 +61,11 @@ namespace ExitSystem
 
             _isArmed = true;
 
-            Debug.Log("BackwardExit armed");
         }
 
         private void TriggerExit()
         {
             _hasTriggered = true;
-
-            Debug.Log($"Player selected: {_direction}");
 
             ExitEntered?.Invoke(_direction);
         }

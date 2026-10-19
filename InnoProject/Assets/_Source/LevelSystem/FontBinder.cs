@@ -2,10 +2,7 @@ using UnityEngine;
 
 namespace LevelSystem
 {
-    /// <summary>
-    /// Feeds the dynamic font atlas to a Text Mesh drawn with the "Office/Text" material (which, unlike the default
-    /// font material, is hidden behind walls). Works in edit mode too and follows atlas rebuilds.
-    /// </summary>
+
     [ExecuteAlways]
     [RequireComponent(typeof(TextMesh))]
     public class FontBinder : MonoBehaviour
@@ -13,7 +10,6 @@ namespace LevelSystem
         static Font defaultFont;
         static readonly int MainTex = Shader.PropertyToID("_MainTex");
 
-        /// <summary>Unity's built-in font (has Cyrillic).</summary>
         public static Font DefaultFont => defaultFont != null ? defaultFont : defaultFont = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
 
         TextMesh textMesh;

@@ -5,12 +5,7 @@ using UnityEngine.UI;
 
 namespace PauseSystem
 {
-    /// <summary>
-    /// The VCR-style settings screen while the game is paused (<see cref="GamePause"/>): mouse sensitivity and volume
-    /// as rows of OSD segments over the darkened still picture. The mouse clicks or drags a row, hovering picks it;
-    /// the arrows or a stick pick a row (up/down) and change it (left/right). A blinking ► marks the chosen row.
-    /// Values go to <see cref="GameSettings"/> at once. Built in code.
-    /// </summary>
+
     public class PauseMenu : MonoBehaviour
     {
         const int Levels = 20;
@@ -44,8 +39,7 @@ namespace PauseSystem
             foreach (var row in new[] { sensitivity, volume })
                 if (events != null && VhsUi.Hovered(row.area)) events.SetSelectedGameObject(row.slider.gameObject);
             var selected = events != null ? events.currentSelectedGameObject : null;
-            // Nothing is chosen until the mouse comes or a direction is pressed anew: keys still held from walking
-            // when the game was paused must not slide a level.
+
             if (selected == null && events != null && VhsUi.NavigationPressed())
                 events.SetSelectedGameObject(selected = sensitivity.slider.gameObject);
             foreach (var row in new[] { sensitivity, volume })
@@ -75,9 +69,6 @@ namespace PauseSystem
             }
         }
 
-        // ------------------------------------------------------------------ values
-
-        // 21 levels, the middle one as designed: each 5 levels double or halve the speed (0.25 to 4).
         static float Sensitivity(float level) => Mathf.Pow(4f, (level - Levels / 2f) / (Levels / 2f));
 
         static float SensitivityLevel(float multiplier) =>
@@ -94,8 +85,6 @@ namespace PauseSystem
             VhsUi.LightUp(row.segments, Mathf.RoundToInt(row.slider.value));
             row.value.text = value;
         }
-
-        // ------------------------------------------------------------------ layout
 
         void Build()
         {
@@ -116,7 +105,6 @@ namespace PauseSystem
             VhsUi.Label(canvas, "pause.resume", null, 34, TextAnchor.MiddleCenter, new Vector2(0f, -250f), VhsUi.Faded);
         }
 
-        /// <summary>The name and value on one line, the segments under it; the whole block is the hover area.</summary>
         static Row NewRow(RectTransform parent, string key, float top, UnityEngine.Events.UnityAction<float> changed)
         {
             var row = new Row();
@@ -137,10 +125,9 @@ namespace PauseSystem
             bar.pivot = new Vector2(0f, 1f);
             bar.anchoredPosition = new Vector2(Left, top - 64f);
             bar.sizeDelta = new Vector2(Right - Left, 46f);
-            bar.GetComponent<Image>().color = Color.clear; // catches clicks and drags on the whole bar
+            bar.GetComponent<Image>().color = Color.clear;
             row.segments = VhsUi.Segments(bar, Levels, 8f);
 
-            // The slider only needs a fill to measure the bar by; the segments show the value.
             var fillArea = new GameObject("Fill Area", typeof(RectTransform)).GetComponent<RectTransform>();
             fillArea.SetParent(bar, false);
             VhsUi.Stretch(fillArea);
@@ -159,7 +146,6 @@ namespace PauseSystem
             return row;
         }
 
-        /// <summary>Up and down go from one row to the other; left and right stay with the slider.</summary>
         static void Link(Slider top, Slider bottom)
         {
             top.navigation = new Navigation { mode = Navigation.Mode.Explicit, selectOnUp = bottom, selectOnDown = bottom };

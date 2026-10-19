@@ -8,12 +8,7 @@ using UnityEngine.UI;
 
 namespace UISystem
 {
-    /// <summary>
-    /// Placeholder on-screen text until the real UI. At the start of a run: "F — flashlight" (until the torch is
-    /// switched on) and "go to the whiteboard and read it" (until the player gets near the board, which explains
-    /// the rules). When the player is out: a fade to black and the tape's end card, "The End, Thanks For Playing"
-    /// with a blinking "Space: Return to Menu", in the VCR look (<see cref="VhsUi"/>). F3: debug line.
-    /// </summary>
+
     public class RoundHud : MonoBehaviour
     {
         public RoundManager round;
@@ -56,7 +51,7 @@ namespace UISystem
         void Update()
         {
             var keyboard = Keyboard.current;
-            if (keyboard != null && keyboard.f3Key.wasPressedThisFrame) debug = !debug;
+            if ((Application.isEditor || Debug.isDebugBuild) && keyboard != null && keyboard.f3Key.wasPressedThisFrame) debug = !debug;
             if (GamePause.Paused) return;
             if (keyboard != null && keyboard.fKey.wasPressedThisFrame) showFlashlightHint = false;
             if (Gamepad.current != null && Gamepad.current.buttonNorth.wasPressedThisFrame) showFlashlightHint = false;
@@ -75,7 +70,6 @@ namespace UISystem
             if (back && Application.CanStreamedLevelBeLoaded(menuScene)) SceneManager.LoadScene(menuScene);
         }
 
-        /// <summary>Black over everything, the tape stopped, and the end card's two lines.</summary>
         void BuildEndCard()
         {
             var canvas = VhsUi.NewCanvas("End_Card", transform, 300);
@@ -107,7 +101,7 @@ namespace UISystem
             hint.fontSize = Mathf.RoundToInt(28 * scale);
             small.fontSize = Mathf.RoundToInt(18 * scale);
 
-            if (!finished && !GamePause.Paused) // the pause screen stays clean
+            if (!finished && !GamePause.Paused)
             {
                 float y = Screen.height * 0.8f;
                 if (showFlashlightHint) Hint(Localization.Get("hint.flashlight"), ref y);
@@ -123,7 +117,6 @@ namespace UISystem
             GUI.color = Color.white;
         }
 
-        /// <summary>One line of text on a dark strip, going up from y.</summary>
         void Hint(string text, ref float y)
         {
             var size = hint.CalcSize(new GUIContent(text));

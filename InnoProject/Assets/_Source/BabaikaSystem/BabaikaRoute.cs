@@ -3,11 +3,7 @@ using UnityEngine;
 
 namespace BabaikaSystem
 {
-    /// <summary>
-    /// Path for a scripted run: the child transforms, in order. The head flies through them on a smooth curve,
-    /// so place them where the head should be: about half a metre above the floor, along a wall, under the
-    /// ceiling. The legs find their own holds around the head.
-    /// </summary>
+
     public class BabaikaRoute : MonoBehaviour
     {
         [Tooltip("Curve through the points instead of straight lines.")]
@@ -19,7 +15,6 @@ namespace BabaikaSystem
 
         public Vector3 this[int index] => transform.GetChild(index).position;
 
-        /// <summary>Facing along the route at its first point.</summary>
         public Quaternion StartRotation()
         {
             if (Count < 2) return transform.rotation;
@@ -27,7 +22,6 @@ namespace BabaikaSystem
             return direction.sqrMagnitude > 1e-4f ? Quaternion.LookRotation(direction, Vector3.up) : transform.rotation;
         }
 
-        /// <summary>World points from <paramref name="from"/> through every route point.</summary>
         public List<Vector3> Sample(Vector3 from)
         {
             var points = new List<Vector3> { from };
@@ -48,7 +42,6 @@ namespace BabaikaSystem
             return samples;
         }
 
-        /// <summary>Centripetal Catmull-Rom: no loops or overshoot at sharp corners.</summary>
         static Vector3 CatmullRom(Vector3 p0, Vector3 p1, Vector3 p2, Vector3 p3, float t)
         {
             float t1 = Knot(p0, p1);

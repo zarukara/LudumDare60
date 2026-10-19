@@ -9,13 +9,7 @@ using Object = UnityEngine.Object;
 
 namespace LevelSystem.EditorTools
 {
-    /// <summary>
-    /// Anomaly prefabs made from the modelled props in Anomalies/More.fbx (one Blender scene with several loose
-    /// props at a giant scale). Each prop is picked out by where it stands in that scene, scaled to its real size,
-    /// put in its place (on a desk, turned to face the desk's chair, or on the floor, facing into the office), with
-    /// the highlight the other anomalies have and a collider round it. The anomaly library picks the prefabs up by
-    /// itself.
-    /// </summary>
+
     public static class PropAnomalies
     {
         const string ModelPath = OfficeMenu.AnomalyFolder + "/More.fbx";
@@ -24,14 +18,14 @@ namespace LevelSystem.EditorTools
         sealed class Prop
         {
             public string File, Title;
-            /// <summary>Where the prop stands in the model's scene, and which way its front faces there.</summary>
+
             public Vector3 Center, Front;
-            /// <summary>Its real height, or its real length when <see cref="ByLength"/>.</summary>
+
             public float Size;
             public bool ByLength;
-            /// <summary>On this desk (desk space, facing its chair), or on the floor (office space) when null.</summary>
+
             public string Desk;
-            /// <summary>Where it stands, and on the floor which way it faces.</summary>
+
             public Vector3 Place, Facing;
             public string[] Replaces = new string[0];
         }
@@ -39,11 +33,11 @@ namespace LevelSystem.EditorTools
         static readonly Prop[] Props =
         {
             new Prop { File = "Old_Boombox", Title = "Старый кассетник", Center = new Vector3(2f, 2f, -41.6f), Front = Vector3.left, Size = 0.5f, ByLength = true,
-                Place = new Vector3(7.82f, 0f, 2.15f), Facing = Vector3.left }, // on the floor between the extinguisher and the copier
+                Place = new Vector3(7.82f, 0f, 2.15f), Facing = Vector3.left },
             new Prop { File = "Desk_Fan", Title = "Вентилятор", Center = new Vector3(0f, 1.5f, -10f), Front = Vector3.back, Size = 0.36f,
                 Desk = "Desk_E1", Place = new Vector3(-0.5f, DeskTop, 0.22f) },
             new Prop { File = "Old_Heater", Title = "Обогреватель", Center = new Vector3(-1f, 1.1f, 18.2f), Front = Vector3.right, Size = 0.7f, ByLength = true,
-                Place = new Vector3(2.35f, 0f, 0.16f), Facing = Vector3.forward }, // by the way in, under the corkboard
+                Place = new Vector3(2.35f, 0f, 0.16f), Facing = Vector3.forward },
             new Prop { File = "Dot_Printer", Title = "Матричный принтер", Center = new Vector3(0f, 0.6f, 3.6f), Front = Vector3.right, Size = 0.42f, ByLength = true,
                 Desk = "Desk_E5", Place = new Vector3(-0.48f, DeskTop, 0.24f) },
             new Prop { File = "Desk_Lamp", Title = "Настольная лампа", Center = new Vector3(0.6f, 2.5f, 7f), Front = Vector3.back, Size = 0.5f,
@@ -56,12 +50,11 @@ namespace LevelSystem.EditorTools
         [MenuItem("Office/Rebuild Prop Anomalies")]
         public static void Rebuild() => Build(OfficeMenu.BuildPalette(), true);
 
-        /// <summary>Makes the prop prefabs that are missing (all of them with <paramref name="overwrite"/>).</summary>
         public static void Build(OfficePalette palette, bool overwrite = false)
         {
             var model = AssetDatabase.LoadAssetAtPath<GameObject>(ModelPath);
             if (model == null) return;
-            var office = OfficeRoomBuilder.Build(palette); // stands at the origin: desks to put things on
+            var office = OfficeRoomBuilder.Build(palette);
             var scene = (GameObject)PrefabUtility.InstantiatePrefab(model);
             try
             {
@@ -88,7 +81,6 @@ namespace LevelSystem.EditorTools
             AnomalyLibrarySync.Sync(library);
         }
 
-        /// <summary>Every part of the model goes to the prop it stands nearest to.</summary>
         static Dictionary<Prop, List<Renderer>> Group(Renderer[] renderers)
         {
             var groups = Props.ToDictionary(p => p, p => new List<Renderer>());
@@ -105,7 +97,6 @@ namespace LevelSystem.EditorTools
             var bounds = parts[0].bounds;
             foreach (var r in parts) bounds.Encapsulate(r.bounds);
 
-            // Copies of the parts round a root at the middle of the prop's foot, still at the model's scale.
             var root = new GameObject(prop.File);
             root.transform.position = new Vector3(bounds.center.x, bounds.min.y, bounds.center.z);
             foreach (var r in parts)
@@ -123,7 +114,6 @@ namespace LevelSystem.EditorTools
             box.center = new Vector3(0f, bounds.size.y / 2f, 0f);
             box.size = bounds.size;
 
-            // Real size, in its place, its front to the chair or into the office.
             float measured = prop.ByLength ? Mathf.Max(bounds.size.x, bounds.size.z) : bounds.size.y;
             root.transform.localScale = Vector3.one * (prop.Size / measured);
             Vector3 place = prop.Place, facing = prop.Facing;

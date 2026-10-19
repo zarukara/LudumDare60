@@ -3,7 +3,7 @@ using UnityEngine.UI;
 
 namespace LocalizationSystem
 {
-    /// <summary>Puts the text for <see cref="key"/> into the Text Mesh or UI Text on this object, in the chosen language.</summary>
+
     public class LocalizedText : MonoBehaviour
     {
         public string key;

@@ -5,12 +5,7 @@ using UnityEngine.Rendering;
 
 namespace PlayerSystem
 {
-    /// <summary>
-    /// Hand torch: F (or the gamepad's north button) switches it on and off with a click. With a
-    /// <see cref="viewmodel"/> (the hand holding the torch, a child of the camera) the hand comes up into view while
-    /// it is on, sways with the steps, pulls back near walls, and the light shines from the torch's "Lens".
-    /// Without one the light sits a little right of and below the eyes.
-    /// </summary>
+
     public class Flashlight : MonoBehaviour
     {
         [Tooltip("Created on start if empty.")]
@@ -44,7 +39,7 @@ namespace PlayerSystem
         float wallPush;
 
         public bool IsOn => isOn;
-        /// <summary>0: hand down and hidden, 1: torch held up.</summary>
+
         public float Raise { get; private set; }
 
         void Awake()
@@ -124,7 +119,6 @@ namespace PlayerSystem
                 rotation *= Quaternion.Euler(Mathf.Sin(phase * 2f) * 1.2f * w, Mathf.Cos(phase) * 1.5f * w, 0f);
             }
 
-            // Close to a wall the torch would go through it: pull the hand back and tip it up.
             float clear = 0.62f;
             float goal = 0f;
             if (Physics.Raycast(transform.position, transform.forward, out var hit, clear, ~0, QueryTriggerInteraction.Ignore)
@@ -145,7 +139,6 @@ namespace PlayerSystem
             return null;
         }
 
-        /// <summary>A short plastic click.</summary>
         static AudioClip MakeClick()
         {
             const int rate = 44100;

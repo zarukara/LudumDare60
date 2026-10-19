@@ -7,17 +7,10 @@ using Random = System.Random;
 
 namespace ScareSystem
 {
-    /// <summary>
-    /// Fills an office with what the Babaika left behind: the people who worked there, flayed, still in their
-    /// chairs (<see cref="FlayedBody"/>), blood on the floor, a few desks and the walls, a smear dragged towards the
-    /// far door, and, if asked for, heaps and mountains of guts. Built in code from a <see cref="Kit"/>. Positions
-    /// are in office space: x 0..8 across from the west wall, z 0..12 from the entrance wall; desks are found by
-    /// name. Nothing blocks the way; the bloody floor has trigger patches (<see cref="FootstepSurface"/>) so steps
-    /// there squelch.
-    /// </summary>
+
     public static class GoreBuilder
     {
-        /// <summary>What the scene is made of.</summary>
+
         [Serializable]
         public class Kit
         {
@@ -36,21 +29,15 @@ namespace ScareSystem
             public AudioClip[] steps = new AudioClip[0];
         }
 
-        const float DeskTop = 0.75f; // OfficeRoomBuilder's desk height
+        const float DeskTop = 0.75f;
         static readonly HashSet<string> OwnNames = new HashSet<string> { "Gut", "Pool", "Smear", "Lump", "Muscle" };
         static Mesh quad;
 
-        /// <summary>
-        /// Builds everything under <paramref name="room"/>, with heaps and mountains of guts only if
-        /// <paramref name="guts"/>; returns the point (world) the eye goes to first.
-        /// </summary>
         public static Vector3 Build(Transform room, Kit kit, Random rng, bool guts)
         {
             var root = new GameObject("Gore").transform;
             root.SetParent(room, false);
 
-            // The people who worked here, still at their desks. The first one has turned to face the door: under a
-            // warm light from above, the eye finds it at once.
             var look = Sitter(root, kit, rng, room, "Desk_W2", FlayedBody.Pose.ThrownBack) ?? room.TransformPoint(new Vector3(4f, 1f, 5f));
             Sitter(root, kit, rng, room, "Desk_W3", FlayedBody.Pose.OnDesk);
             Sitter(root, kit, rng, room, "Desk_W4", FlayedBody.Pose.Slumped);
@@ -60,7 +47,6 @@ namespace ScareSystem
             var light = root.InverseTransformPoint(look);
             LevelSystem.Prims.SpotLight("Gore_Light", root, new Vector3(light.x, 2.75f, light.z), Vector3.down, 70f, 3.4f, 2.4f, new Color(1f, 0.82f, 0.6f), false);
 
-            // Blood: a few pools, splashes, a smear dragged to the far door, some on desks and walls.
             for (int i = 0; i < 3; i++)
             {
                 var at = new Vector3(R(rng, 2.6f, 5.4f), 0f, R(rng, 2.5f, 10.5f));
@@ -73,13 +59,13 @@ namespace ScareSystem
             Drag(root, kit, rng, new[] { new Vector3(2.4f, 0f, 3.6f), new Vector3(3.2f, 0f, 6.5f), new Vector3(2.9f, 0f, 9.4f), new Vector3(2.2f, 0f, 11.4f) }, 0.3f);
             foreach (var name in new[] { "Desk_W1", "Desk_W5", "Desk_E1" })
                 Desk(root, kit, rng, room.Find("Workstations/" + name), false, guts);
-            Splat(root, kit.splatter, rng, new Vector3(8f, 1.55f, 3.2f), Vector3.left, 0.7f); // up the walls, where nothing stands in front
+            Splat(root, kit.splatter, rng, new Vector3(8f, 1.55f, 3.2f), Vector3.left, 0.7f);
             Splat(root, kit.splatter, rng, new Vector3(8f, 1.15f, 2.6f), Vector3.left, 0.35f);
             Splat(root, kit.splatter, rng, new Vector3(0f, 1.7f, 10.8f), Vector3.right, 0.6f);
 
             if (guts)
             {
-                // A heap in the middle of the aisle and mountains along both sides; the middle stays clear enough.
+
                 Heap(root, kit, rng, new Vector3(4.3f, 0f, 4.8f), 0.6f);
                 foreach (float z in new[] { 2.6f, 5.1f, 7.5f, 9.7f })
                     Mound(root, kit, rng, new Vector3(R(rng, 2.05f, 2.35f), 0f, z + R(rng, -0.3f, 0.3f)), R(rng, 0.6f, 0.8f));
@@ -90,7 +76,6 @@ namespace ScareSystem
                 Desk(root, kit, rng, room.Find("Workstations/Desk_E4"), false, true);
             }
 
-            // Everything above was built as new meshes (the shared splash quad and Unity's primitives aside).
             var owned = root.gameObject.AddComponent<OwnedMeshes>();
             foreach (var filter in root.GetComponentsInChildren<MeshFilter>())
                 if (filter.sharedMesh != null && filter.sharedMesh != quad && OwnNames.Contains(filter.sharedMesh.name))
@@ -99,9 +84,6 @@ namespace ScareSystem
             return look;
         }
 
-        // ------------------------------------------------------------------ pieces
-
-        /// <summary>Two or three coiled strands and a few lumps in a pool, with splashes around.</summary>
         static void Heap(Transform root, Kit kit, Random rng, Vector3 center, float size)
         {
             Pool(root, kit.pool, rng, center, size * 1.7f, 0.002f);
@@ -109,7 +91,7 @@ namespace ScareSystem
             int strands = size > 0.4f ? 3 : 2;
             for (int s = 0; s < strands; s++)
             {
-                float tube = s == 0 ? R(rng, 0.05f, 0.06f) : R(rng, 0.03f, 0.042f); // one thick, the rest thin
+                float tube = s == 0 ? R(rng, 0.05f, 0.06f) : R(rng, 0.03f, 0.042f);
                 var at = center + new Vector3(R(rng, -0.15f, 0.15f), tube * s * 0.9f, R(rng, -0.15f, 0.15f)) * size / 0.5f;
                 Gut(root, GutTone(kit, rng), rng, Coil(rng, at, size * R(rng, 0.6f, 1f), tube, rng.Next(22, 34), true), tube);
             }
@@ -125,10 +107,6 @@ namespace ScareSystem
             }
         }
 
-        /// <summary>
-        /// A mountain of guts: a dozen strands winding over a cone, lumps on its slopes, a wide pool under it. Too many
-        /// pieces for shadows, so it casts none.
-        /// </summary>
         static void Mound(Transform root, Kit kit, Random rng, Vector3 center, float size)
         {
             float height = size * R(rng, 0.6f, 0.85f);
@@ -152,7 +130,6 @@ namespace ScareSystem
             }
         }
 
-        /// <summary>A strand winding over a mound of the given size and height, close under its surface so it shows.</summary>
         static List<Vector3> OverMound(Random rng, Vector3 center, float size, float height, float tube, int count)
         {
             var points = new List<Vector3>(count);
@@ -169,18 +146,16 @@ namespace ScareSystem
             return points;
         }
 
-        /// <summary>A dragged smear along the points that squelches underfoot.</summary>
         static void Drag(Transform root, Kit kit, Random rng, Vector3[] through, float width)
         {
             Smear(root, kit.smear, rng, through, width);
             foreach (var point in Spline(new List<Vector3>(through), 2)) Squelch(root, kit, point, width);
         }
 
-        /// <summary>Blood on a desk; with guts a heap of them, and with spill a strand sliding over the edge to the floor.</summary>
         static void Desk(Transform root, Kit kit, Random rng, Transform desk, bool spill, bool guts)
         {
             if (desk == null) return;
-            // Desk space: x along the desk, +z away from the wall, the top at DeskTop.
+
             Vector3 P(float x, float y, float z) => root.InverseTransformPoint(desk.TransformPoint(new Vector3(x, y, z)));
             var up = root.InverseTransformDirection(desk.up);
 
@@ -188,7 +163,7 @@ namespace ScareSystem
             for (int k = 0; k < 3; k++) Splat(root, kit.splatter, rng, P(R(rng, -0.6f, 0.5f), DeskTop, R(rng, 0.25f, 0.7f)), up, R(rng, 0.08f, 0.2f));
             if (!guts)
             {
-                Pool(root, kit.pool, rng, P(0f, 0f, 0.95f), 0.14f, 0.002f); // drips off the front edge
+                Pool(root, kit.pool, rng, P(0f, 0f, 0.95f), 0.14f, 0.002f);
                 return;
             }
             float tube = 0.03f;
@@ -209,36 +184,33 @@ namespace ScareSystem
             else
             {
                 Organ(root, kit.organ, rng, P(0.05f, DeskTop, 0.55f), R(rng, 0.08f, 0.11f));
-                Pool(root, kit.pool, rng, P(0f, 0f, 0.95f), 0.16f, 0.002f); // drips off the front edge
+                Pool(root, kit.pool, rng, P(0f, 0f, 0.95f), 0.16f, 0.002f);
             }
         }
 
-        /// <summary>A flayed body in the chair of <paramref name="desk"/>; returns its upper body (world), or null.</summary>
         static Vector3? Sitter(Transform root, Kit kit, Random rng, Transform room, string desk, FlayedBody.Pose pose)
         {
             var d = room.Find("Workstations/" + desk);
             var chair = d != null ? d.Find("Chair") : null;
             if (chair == null || kit.muscle == null) return null;
-            // Only the ones fallen onto the desk keep facing it; the rest have turned round towards the aisle.
+
             if (pose != FlayedBody.Pose.OnDesk) chair.Rotate(0f, 180f + R(rng, -25f, 25f), 0f, Space.World);
-            // How far ahead of the chair the desk's front edge is.
+
             var inDesk = d.InverseTransformPoint(chair.position);
             var edge = chair.InverseTransformPoint(d.TransformPoint(new Vector3(inDesk.x, DeskTop, 0.775f)));
             return FlayedBody.Seat(root, kit, rng, chair, edge.z, pose);
         }
 
-        /// <summary>A pool of blood for other builders; on the floor it can squelch underfoot.</summary>
         internal static void Puddle(Transform root, Kit kit, Random rng, Vector3 center, float radius, Vector3 up, bool squelch = false)
         {
             Pool(root, kit.pool, rng, center, radius, 0.003f, up);
             if (squelch) Squelch(root, kit, center, radius);
         }
 
-        /// <summary>A trigger over a bloody patch of floor, so steps there squelch.</summary>
         static void Squelch(Transform root, Kit kit, Vector3 center, float radius)
         {
             if (kit.steps == null || kit.steps.Length == 0) return;
-            var go = new GameObject("Squelch", typeof(BoxCollider), typeof(FootstepSurface)) { layer = 2 }; // Ignore Raycast: sight checks look past it
+            var go = new GameObject("Squelch", typeof(BoxCollider), typeof(FootstepSurface)) { layer = 2 };
             go.transform.SetParent(root, false);
             go.transform.localPosition = new Vector3(center.x, 0.15f, center.z);
             var box = go.GetComponent<BoxCollider>();
@@ -247,10 +219,6 @@ namespace ScareSystem
             go.GetComponent<FootstepSurface>().clips = kit.steps;
         }
 
-        /// <summary>
-        /// A strand heaped in loops: it curls, bends back now and then, wanders in and out, and later loops lie on
-        /// the earlier ones. With a tail its end slides off the heap across the floor.
-        /// </summary>
         static List<Vector3> Coil(Random rng, Vector3 center, float spread, float tube, int count, bool tail)
         {
             var points = new List<Vector3>(count + 3);
@@ -258,7 +226,7 @@ namespace ScareSystem
             float turn = R(rng, 0.45f, 0.75f) * (rng.Next(2) == 0 ? 1f : -1f);
             for (int i = 0; i < count; i++)
             {
-                if (rng.NextDouble() < 0.12) turn = -turn; // an S-bend
+                if (rng.NextDouble() < 0.12) turn = -turn;
                 angle += turn * R(rng, 0.7f, 1.3f);
                 radius = Mathf.Clamp(radius + R(rng, -0.18f, 0.2f) * spread, spread * 0.15f, spread);
                 float height = tube * (1f + 2.2f * i / count * R(rng, 0.5f, 1f));
@@ -277,7 +245,6 @@ namespace ScareSystem
         static void Gut(Transform root, Material material, Random rng, List<Vector3> points, float radius, int sides = 10, int steps = 6, bool shadows = true) =>
             Piece(root, "Gut", Tube(Spline(points, steps), radius, sides, R(rng, 0f, 10f)), material, shadows);
 
-        /// <summary>The usual guts, or now and then the darker ones.</summary>
         static Material GutTone(Kit kit, Random rng) => kit.gutsDark != null && rng.NextDouble() < 0.4 ? kit.gutsDark : kit.guts;
 
         static void Organ(Transform root, Material material, Random rng, Vector3 at, float size)
@@ -288,7 +255,6 @@ namespace ScareSystem
             go.transform.localScale = new Vector3(size * R(rng, 1.1f, 1.7f), size * R(rng, 0.4f, 0.65f), size * R(rng, 0.8f, 1.3f));
         }
 
-        /// <summary>A flat puddle with a ragged edge, lying on the surface facing <paramref name="up"/>.</summary>
         static void Pool(Transform root, Material material, Random rng, Vector3 center, float radius, float lift, Vector3? up = null)
         {
             const int n = 40;
@@ -315,16 +281,14 @@ namespace ScareSystem
             go.transform.localRotation = Quaternion.FromToRotation(Vector3.up, normal) * Quaternion.Euler(0f, R(rng, 0f, 360f), 0f);
         }
 
-        /// <summary>A splash (cut-out texture on a quad) on a surface facing <paramref name="facing"/>.</summary>
         static void Splat(Transform root, Material material, Random rng, Vector3 at, Vector3 facing, float size)
         {
             var go = Piece(root, "Splash", Quad(), material, false);
-            go.transform.localPosition = at + facing * R(rng, 0.003f, 0.007f); // a little apart, so overlaps never flicker
+            go.transform.localPosition = at + facing * R(rng, 0.003f, 0.007f);
             go.transform.localRotation = Quaternion.FromToRotation(Vector3.up, facing) * Quaternion.Euler(0f, R(rng, 0f, 360f), 0f);
             go.transform.localScale = new Vector3(size, 1f, size * R(rng, 0.8f, 1.25f));
         }
 
-        /// <summary>A dragged smear along a curve over the floor (the smear texture runs along it).</summary>
         static void Smear(Transform root, Material material, Random rng, Vector3[] through, float width)
         {
             var path = Spline(new List<Vector3>(through), 10);
@@ -354,8 +318,6 @@ namespace ScareSystem
             Piece(root, "Smear", mesh, material, false);
         }
 
-        // ------------------------------------------------------------------ meshes
-
         static GameObject Piece(Transform root, string name, Mesh mesh, Material material, bool shadows)
         {
             var go = new GameObject(name, typeof(MeshFilter), typeof(MeshRenderer));
@@ -367,7 +329,6 @@ namespace ScareSystem
             return go;
         }
 
-        /// <summary>Catmull-Rom through the points, <paramref name="steps"/> points per span.</summary>
         static List<Vector3> Spline(List<Vector3> p, int steps)
         {
             var result = new List<Vector3>();
@@ -384,7 +345,6 @@ namespace ScareSystem
             return result;
         }
 
-        /// <summary>A round tube along the path that swells and narrows like a gut, thinner at both ends, capped.</summary>
         static Mesh Tube(List<Vector3> path, float radius, int sides, float phase)
         {
             var verts = new List<Vector3>();
@@ -399,7 +359,7 @@ namespace ScareSystem
             {
                 if (i > 0) length += Vector3.Distance(path[i - 1], path[i]);
                 Vector3 t = (i < rings - 1 ? path[i + 1] - path[i] : path[i] - path[i - 1]).normalized;
-                normal = Vector3.ProjectOnPlane(normal, t).normalized; // carried along, so the tube does not twist
+                normal = Vector3.ProjectOnPlane(normal, t).normalized;
                 Vector3 binormal = Vector3.Cross(t, normal);
                 float end = Mathf.Clamp01(Mathf.Min(i, rings - 1 - i) / 4f);
                 float r = radius * (0.86f + 0.14f * Mathf.Sin(length / radius * 1.25f + phase)) * Mathf.Lerp(0.5f, 1f, end);
@@ -452,7 +412,6 @@ namespace ScareSystem
             }
         }
 
-        /// <summary>A bumpy blob of radius about 1 with smooth normals (no UV seam).</summary>
         static Mesh Lump(Random rng)
         {
             const int rings = 10, segments = 14;
@@ -492,7 +451,6 @@ namespace ScareSystem
             return mesh;
         }
 
-        /// <summary>A unit quad lying flat, facing up, UVs 0..1 (shared).</summary>
         static Mesh Quad()
         {
             if (quad != null) return quad;

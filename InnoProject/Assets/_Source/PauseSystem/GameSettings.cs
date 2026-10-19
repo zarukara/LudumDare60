@@ -2,10 +2,7 @@ using UnityEngine;
 
 namespace PauseSystem
 {
-    /// <summary>
-    /// The player's settings from the pause menu, kept between runs in PlayerPrefs: mouse sensitivity (a multiplier
-    /// on the look speed) and the master volume of every sound.
-    /// </summary>
+
     public static class GameSettings
     {
         const string SensitivityKey = "settings.mouseSensitivity";
@@ -15,7 +12,6 @@ namespace PauseSystem
 
         static float sensitivity = 1f;
 
-        /// <summary>Multiplier on the mouse look speed: 1 as designed, from 0.25 to 4.</summary>
         public static float MouseSensitivity
         {
             get => sensitivity;
@@ -26,7 +22,6 @@ namespace PauseSystem
             }
         }
 
-        /// <summary>Master volume, 0 to 1.</summary>
         public static float Volume
         {
             get => AudioListener.volume;
@@ -37,7 +32,6 @@ namespace PauseSystem
             }
         }
 
-        /// <summary>Writes the settings to disk (a web build keeps them only after this).</summary>
         public static void Save() => PlayerPrefs.Save();
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]

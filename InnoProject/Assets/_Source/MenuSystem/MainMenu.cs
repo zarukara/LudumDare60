@@ -8,12 +8,7 @@ using UnityEngine.UI;
 
 namespace MenuSystem
 {
-    /// <summary>
-    /// Start menu in the look of a VCR's on-screen display on a black screen, built in code on start: the title,
-    /// Play and the language (Русский / English, remembered between runs), with "STOP ■" and the tape's date in the
-    /// corners. A blinking ► marks the chosen line. The mouse picks lines by hovering and clicks them; arrows or a
-    /// stick and Enter work too, left and right switch the language. Play loads <see cref="gameScene"/>.
-    /// </summary>
+
     public class MainMenu : MonoBehaviour
     {
         public string gameScene = "Office";
@@ -49,7 +44,7 @@ namespace MenuSystem
                 if (VhsUi.Hovered((RectTransform)item.transform)) events.SetSelectedGameObject(item.gameObject);
             var selected = events.currentSelectedGameObject;
             if (selected == null && VhsUi.NavigationPressed())
-                events.SetSelectedGameObject(selected = play.gameObject); // a click on empty space must not lose the keys
+                events.SetSelectedGameObject(selected = play.gameObject);
             if (selected == language.gameObject && SidePressed()) ToggleLanguage();
 
             bool onLanguage = selected == language.gameObject;
@@ -74,8 +69,6 @@ namespace MenuSystem
 
         void Refresh() => languageValue.text = Localization.Current == Language.Russian ? "◄ РУССКИЙ ►" : "◄ ENGLISH ►";
 
-        // ------------------------------------------------------------------ layout
-
         void Build()
         {
             var canvas = VhsUi.NewCanvas("Menu_Canvas", transform, 0);
@@ -93,7 +86,6 @@ namespace MenuSystem
             language.navigation = new Navigation { mode = Navigation.Mode.Explicit, selectOnUp = play, selectOnDown = play };
         }
 
-        /// <summary>OSD text in a corner of the screen, like on the tape in the game.</summary>
         static void Corner(RectTransform canvas, string text, Vector2 corner, Vector2 offset, TextAnchor alignment)
         {
             var label = VhsUi.Label(canvas, null, text, 46, alignment, offset, VhsUi.Bright);
@@ -101,7 +93,6 @@ namespace MenuSystem
             label.rectTransform.anchoredPosition = offset;
         }
 
-        /// <summary>A menu line: the text, and an invisible button over the whole line for the mouse and the keys.</summary>
         static Button Item(RectTransform canvas, string key, float y, out Text label, UnityEngine.Events.UnityAction onClick)
         {
             var area = new GameObject("Item_" + key, typeof(RectTransform), typeof(Image), typeof(Button)).GetComponent<RectTransform>();

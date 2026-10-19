@@ -11,17 +11,12 @@ using Random = System.Random;
 
 namespace ScareSystem.EditorTools
 {
-    /// <summary>
-    /// Assets of the Babaika's aftermath in Assets/_Presentation/Gore: splash, smear and gut textures drawn in code
-    /// (always the same, so re-running changes nothing), their URP Lit materials, and the <see cref="GoreOffice"/>
-    /// on the Game object with the blood steps from Sounds/Footsteps (Blood*).
-    /// </summary>
+
     public static class GoreSetup
     {
         public const string Folder = "Assets/_Presentation/Gore";
         const string FootstepsFolder = "Assets/_Presentation/Sounds/Footsteps";
 
-        /// <summary>Adds (or refreshes) the aftermath on the Game object.</summary>
         public static GoreOffice AddGore(GameObject game, RoundManager round, BabaikaChase chase, PlayerController player, Camera view)
         {
             var gore = game.GetComponent<GoreOffice>();
@@ -66,9 +61,6 @@ namespace ScareSystem.EditorTools
             return kit;
         }
 
-        // ------------------------------------------------------------------ textures (white shapes; the materials tint them)
-
-        /// <summary>A splash: a ragged blob, streaks flung out from it and drops around.</summary>
         static Color[] Splash(int size, Random rng)
         {
             float R(float a, float b) => a + (float)rng.NextDouble() * (b - a);
@@ -100,7 +92,6 @@ namespace ScareSystem.EditorTools
             return pixels;
         }
 
-        /// <summary>A drag mark: a band with a wavy edge and streaks along it, seamless along x.</summary>
         static Color[] Smear(int width, int height, Random rng)
         {
             float R(float a, float b) => a + (float)rng.NextDouble() * (b - a);
@@ -110,7 +101,7 @@ namespace ScareSystem.EditorTools
             {
                 for (int x = 0; x < width; x++)
                 {
-                    float u = (float)x / width * 2f * Mathf.PI, v = (y + 0.5f) / height; // u goes once round: seamless
+                    float u = (float)x / width * 2f * Mathf.PI, v = (y + 0.5f) / height;
                     float edge = 0.36f + 0.06f * Mathf.Sin(u * 3f + f1) + 0.03f * Mathf.Sin(u * 7f + f2) + 0.03f * Mathf.Sin(u * 13f + f3);
                     float streak = 0.6f * (0.5f + 0.5f * Mathf.Sin(v * 95f + 2f * Mathf.Sin(u * 2f + f4)))
                                    + 0.4f * Mathf.PerlinNoise(v * 20f, Mathf.Cos(u) * 1.5f + 3f);
@@ -122,7 +113,6 @@ namespace ScareSystem.EditorTools
             return pixels;
         }
 
-        /// <summary>Wet pink-red with darker patches and thin veins, seamless both ways.</summary>
         static Color[] Guts(int size, Random rng)
         {
             float R(float a, float b) => a + (float)rng.NextDouble() * (b - a);
@@ -146,11 +136,6 @@ namespace ScareSystem.EditorTools
             return pixels;
         }
 
-        /// <summary>
-        /// Bare muscle, colour and height: bundles of fibres running along v (seamless across u, around a limb) with
-        /// dark grooves between them and fine striation, white fascia streaks, white tendon at both ends of v (the
-        /// joints), dark clots of blood.
-        /// </summary>
         static (Color[] color, float[] height) Muscle(int size, Random rng)
         {
             float R(float a, float b) => a + (float)rng.NextDouble() * (b - a);
@@ -166,7 +151,7 @@ namespace ScareSystem.EditorTools
                 for (int x = 0; x < size; x++)
                 {
                     float u = 2f * Mathf.PI * x / size, v = (y + 0.5f) / size;
-                    // Bundles with thin grooves between them that wander along the muscle, and fine striation on top.
+
                     float groove = Mathf.Abs(Mathf.Sin(u * 10f + 1.4f * Mathf.Sin(v * 7f + p1) + 0.6f * Mathf.Sin(u * 2f + p2)));
                     float bundle = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0f, 0.35f, groove));
                     float fine = 0.5f + 0.5f * Mathf.Sin(u * 46f + 2f * Mathf.Sin(v * 19f + p3));
@@ -185,7 +170,6 @@ namespace ScareSystem.EditorTools
             return (pixels, heights);
         }
 
-        /// <summary>A tangent-space normal map from a height field (seamless across x, clamped along y).</summary>
         static Texture2D SaveNormalMap(string name, int size, float[] height, float strength)
         {
             float H(int x, int y) => height[Mathf.Clamp(y, 0, size - 1) * size + ((x % size) + size) % size];
@@ -230,7 +214,6 @@ namespace ScareSystem.EditorTools
             return AssetDatabase.LoadAssetAtPath<Texture2D>(path);
         }
 
-        /// <summary>URP Lit; with a cutoff the texture's alpha cuts the shape out (opaque pass, no sorting trouble).</summary>
         static Material SaveMaterial(string name, Color color, float smoothness, Texture2D map = null, float cutoff = 0f, Texture2D normal = null)
         {
             string path = $"{Folder}/{name}.mat";

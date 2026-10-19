@@ -2,12 +2,7 @@ using UnityEngine;
 
 namespace ScareSystem
 {
-    /// <summary>
-    /// Holding the breath while she is close (<see cref="StairsHunt"/>), as a little timing game. A marker runs to and
-    /// fro along a bar; one press while it is in the lit zone holds the breath for a while (<see cref="Phase.Hold"/>),
-    /// then a new zone lights up and has to be caught in time again. A press outside the zone, or none in time, and
-    /// the player gasps. <see cref="Difficulty"/> (0..1) narrows the zone and speeds the marker up.
-    /// </summary>
+
     public class BreathHold
     {
         public enum Phase
@@ -17,21 +12,21 @@ namespace ScareSystem
         }
 
         public Phase State { get; private set; } = Phase.Catch;
-        /// <summary>Where the marker is along the bar, 0..1.</summary>
+
         public float Marker { get; private set; }
         public float ZoneCenter { get; private set; }
         public float ZoneWidth { get; private set; }
-        /// <summary>Catch: seconds left to press. Hold: seconds the breath still lasts.</summary>
+
         public float TimeLeft { get; private set; }
-        /// <summary>While holding: how much of the held breath is left, 1..0.</summary>
+
         public float HoldShare => State == Phase.Hold ? Mathf.Clamp01(TimeLeft / Mathf.Max(0.01f, holdTime)) : 0f;
-        /// <summary>Time.time of the last good press.</summary>
+
         public float LastCatch { get; private set; } = -1f;
         public float Difficulty { get; set; }
 
         float direction = 1f, holdTime;
 
-        float Speed => Mathf.Lerp(0.7f, 1.25f, Difficulty);   // bar lengths per second
+        float Speed => Mathf.Lerp(0.7f, 1.25f, Difficulty);
         float Window => Mathf.Lerp(2.8f, 1.8f, Difficulty);
         float Width => Mathf.Lerp(0.24f, 0.12f, Difficulty);
         float HoldSeconds => Mathf.Lerp(1.9f, 1.3f, Difficulty);
@@ -43,14 +38,13 @@ namespace ScareSystem
             NewZone();
         }
 
-        /// <summary>One frame: +1 the zone was caught, -1 the player gasped, 0 nothing happened.</summary>
         public int Tick(float dt, bool pressed)
         {
             TimeLeft -= dt;
             if (State == Phase.Hold)
             {
                 if (TimeLeft <= 0f) NewZone();
-                return 0; // presses while holding do not count
+                return 0;
             }
 
             Marker += direction * Speed * dt;
@@ -76,7 +70,6 @@ namespace ScareSystem
             return TimeLeft <= 0f ? -1 : 0;
         }
 
-        /// <summary>A fresh zone away from the marker, and the time to catch it.</summary>
         void NewZone()
         {
             State = Phase.Catch;

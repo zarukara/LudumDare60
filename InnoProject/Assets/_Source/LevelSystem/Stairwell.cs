@@ -4,16 +4,7 @@ using UnityEngine;
 
 namespace LevelSystem
 {
-    /// <summary>
-    /// The emergency stairwell at the end of the run, built by <see cref="FinishHallBuilder"/>. The door in from the
-    /// offices is on the 8th floor; every floor down to the 1st is the same, only the number on the wall changes:
-    /// a landing with two locked doors and something to hide behind or in (an overturned cleaning cart, a
-    /// wardrobe, a nightstand), a flight down to the half landing and a flight on down, a solid wall between the
-    /// two flights. Under the 1st floor is the basement with
-    /// the way out, above the 8th a locked attic.
-    /// Knows where things are on each floor, runs the lamps (steady night light or flashing red alarm) and keeps
-    /// only the floors near the camera switched on. Positions are local to this object.
-    /// </summary>
+
     public class Stairwell : MonoBehaviour
     {
         public const int Attic = 9, Top = 8, Basement = 0;
@@ -23,20 +14,16 @@ namespace LevelSystem
         public const float Rise = 0.175f, Tread = 0.3f;
         public const float Run = Steps * Tread, FlightDrop = Steps * Rise, FloorHeight = 2f * FlightDrop;
         public const float FlightEnd = LandingDepth + Run, North = FlightEnd + MidDepth;
-        /// <summary>Metres down per metre along a flight.</summary>
+
         public const float Slope = FlightDrop / Run;
         public const float WestFlight = (West + Split - MiddleWall / 2f) / 2f, EastFlight = (Split + MiddleWall / 2f + East) / 2f;
-        /// <summary>Where the cart lies on a landing (its back edge, towards the stairs from there).</summary>
+
         public const float CartX = 4.3f, CartZ = 1.05f;
-        /// <summary>The middle of a wardrobe against the south wall, and the floor number painted beside it.</summary>
+
         public const float WardrobeX = 3.85f, NumberX = 5f;
-        /// <summary>The locked door in the west wall of every landing, its middle.</summary>
+
         public const float SideDoorZ = 2.8f;
 
-        /// <summary>
-        /// From the line over the step edges down to the underside of a flight (the ceiling of the one below): the
-        /// slab starts just under the steps' inner corners.
-        /// </summary>
         public static readonly float Underside = Rise + 0.015f + FlightSlab * Mathf.Sqrt(1f + Slope * Slope);
 
         static readonly Color NightColor = new Color(0.82f, 0.9f, 1f);
@@ -53,10 +40,8 @@ namespace LevelSystem
         [Tooltip("Floors kept switched on above and below the camera.")]
         public int floorsAround = 2;
 
-        /// <summary>The lamps flash red.</summary>
         public bool Alarm { get; private set; }
 
-        // Filled by the builder.
         internal OfficePalette palette;
         internal Material glow;
         internal readonly List<Light> lamps = new List<Light>();
@@ -68,7 +53,6 @@ namespace LevelSystem
         int shownFrom = int.MinValue, shownTo = int.MinValue;
         float alarmTime;
 
-        /// <summary>Height of a floor's landing, local.</summary>
         public static float FloorY(int floor) => (floor - Top) * FloorHeight;
 
         public void SetAlarm(bool on)
@@ -77,16 +61,11 @@ namespace LevelSystem
             alarmTime = 0f;
         }
 
-        /// <summary>What the number on a floor's wall says.</summary>
         public void SetNumber(int floor, string text)
         {
             if (numbers.TryGetValue(floor, out var number) && number != null) number.text = text;
         }
 
-        /// <summary>
-        /// The floors up to <paramref name="top"/> take on the numbers of the ones under them, so a viewer lifted one
-        /// floor at the same moment sees no change: the stairs go on down for longer than they are.
-        /// </summary>
         public void ShiftNumbersUp(int top)
         {
             for (int floor = top; floor > Basement + 1; floor--)
@@ -94,33 +73,24 @@ namespace LevelSystem
                     to.text = from.text;
         }
 
-        /// <summary>
-        /// Invisible walls across the foot of the flight up from each landing at and above <paramref name="lowest"/>,
-        /// so the player cannot go back up from there; the landings below have theirs open.
-        /// </summary>
         public void ShutWaysUp(int lowest)
         {
             foreach (var pair in waysUp)
                 if (pair.Value != null) pair.Value.SetActive(pair.Key >= lowest);
         }
 
-        /// <summary>Every flight up open again.</summary>
         public void OpenWaysUp() => ShutWaysUp(int.MaxValue);
 
-        /// <summary>The real floor numbers again.</summary>
         public void ResetNumbers()
         {
             foreach (var pair in numbers)
                 if (pair.Value != null) pair.Value.text = pair.Key.ToString();
         }
 
-        /// <summary>The door in the south wall of a floor's landing (its frame, leaf and hinge), or null.</summary>
         public Transform FloorDoor(int floor) => floors.TryGetValue(floor, out var g) && g != null ? g.transform.Find("Floor_Door") : null;
 
-        /// <summary>The cart to hide behind on this floor, or null.</summary>
         public HidingSpot Cover(int floor) => covers.TryGetValue(floor, out var spot) ? spot : null;
 
-        /// <summary>Takes the cart (and what spilled from it) off a floor: nowhere to hide there.</summary>
         public void RemoveCover(int floor)
         {
             if (!covers.TryGetValue(floor, out var spot)) return;
@@ -128,35 +98,22 @@ namespace LevelSystem
             if (spot != null) Destroy(spot.gameObject);
         }
 
-        /// <summary>Which floor a point is at, fractional: 8 is the top landing, 7.5 the half landing under it.</summary>
         public float Level(Vector3 world) => Top + transform.InverseTransformPoint(world).y / FloorHeight;
 
-        /// <summary>The point (a player's feet) is on this floor's landing, not on the flights.</summary>
         public bool OnLanding(int floor, Vector3 world)
         {
             var local = transform.InverseTransformPoint(world);
             return local.x > West && local.x < East && local.z > 0f && local.z < LandingDepth && Mathf.Abs(local.y - FloorY(floor)) < 1.2f;
         }
 
-        /// <summary>On this floor: its landing or the flights just above and below it.</summary>
         public bool NearFloor(int floor, Vector3 world) => Mathf.Abs(transform.InverseTransformPoint(world).y - FloorY(floor)) < 1.6f;
 
-        /// <summary>At the top of the flight down from this floor, looking down it to the half landing below (world).</summary>
         public Pose Lookout(int floor) =>
             new Pose(transform.TransformPoint(new Vector3(EastFlight - 0.15f, FloorY(floor) + 0.05f, LandingDepth - 0.45f)), transform.rotation);
 
-        /// <summary>Standing on the landing just off the flight from above, as if come down it (world).</summary>
         public Pose Arrival(int floor) =>
             new Pose(transform.TransformPoint(new Vector3(WestFlight, FloorY(floor) + 0.05f, 3.1f)), transform.rotation * Quaternion.Euler(0f, 180f, 0f));
 
-        /// <summary>
-        /// Her way past <paramref name="floor"/> along the ceilings, head positions (world). She starts out of sight,
-        /// under the ceiling of the flight below behind the middle wall, comes round it at the half landing below, up
-        /// along the ceiling of the flight down from this landing, across the landing (<paramref name="stare"/> is
-        /// the point over the cover, or with a wardrobe, down at the gap between its doors: then she gets off the
-        /// ceiling for it, <paramref name="upright"/>), up along the ceiling of the flight that comes down to it, and
-        /// round the middle wall at the half landing above, out of sight again.
-        /// </summary>
         public Vector3[] Route(int floor, out int stare, out bool upright)
         {
             var route = Route(floor, out stare);
@@ -168,7 +125,7 @@ namespace LevelSystem
 
         public Vector3[] Route(int floor, out int stare)
         {
-            const float hang = 0.8f; // head under the ceiling; the legs reach up to it
+            const float hang = 0.8f;
             float landingCeiling = FloorHeight - Slab, halfBelow = landingCeiling - FlightDrop, halfAbove = halfBelow + FloorHeight;
             var local = new[]
             {
@@ -192,7 +149,6 @@ namespace LevelSystem
             return route;
         }
 
-        // Ceilings over the flights around a landing, relative to that landing: the underside of the flight one floor up.
         static float CeilingOverFlightDown(float z) => FloorHeight - Underside - (z - LandingDepth) * Slope;
         static float CeilingOverFlightUp(float z) => FloorHeight - Underside + (z - LandingDepth) * Slope;
         static float CeilingOverFlightBelow(float z) => -Underside + (z - LandingDepth) * Slope;
@@ -204,7 +160,6 @@ namespace LevelSystem
             UpdateLamps();
         }
 
-        /// <summary>Walls, slabs and flights hide everything further than a floor or two away, so those are switched off.</summary>
         void ShowFloorsAround(Vector3 viewer)
         {
             int level = Mathf.RoundToInt(Level(viewer));
@@ -233,7 +188,6 @@ namespace LevelSystem
             glow.SetColor(BaseColor, Alarm ? Color.Lerp(new Color(0.3f, 0.04f, 0.03f), AlarmColor, pulse) : Color.white);
         }
 
-        /// <summary>0..1 per period: a quick rise, about half the time on, a soft fall, then dark.</summary>
         static float Flash(float t)
         {
             float phase = t - Mathf.Floor(t);

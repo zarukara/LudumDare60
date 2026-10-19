@@ -5,10 +5,7 @@ using UnityEngine;
 
 namespace AnomalySystem.EditorTools
 {
-    /// <summary>
-    /// Keeps every <see cref="AnomalyLibrary"/> in sync with the prefabs in its own folder: drop a prefab into the
-    /// anomalies folder (or delete one) and the library updates itself.
-    /// </summary>
+
     public sealed class AnomalyLibrarySync : AssetPostprocessor
     {
         static void OnPostprocessAllAssets(string[] imported, string[] deleted, string[] moved, string[] movedFrom)
@@ -23,14 +20,13 @@ namespace AnomalySystem.EditorTools
             }
         }
 
-        /// <summary>Fills the library with the prefabs of its folder (sorted by name); saves only on change.</summary>
         public static void Sync(AnomalyLibrary library)
         {
             if (library == null) return;
             string folder = Path.GetDirectoryName(AssetDatabase.GetAssetPath(library))?.Replace('\\', '/');
             var prefabs = AssetDatabase.FindAssets("t:Prefab", new[] { folder })
                 .Select(AssetDatabase.GUIDToAssetPath)
-                .Where(p => p.EndsWith(".prefab")) // not the models the props are made from
+                .Where(p => p.EndsWith(".prefab"))
                 .Select(p => AssetDatabase.LoadAssetAtPath<GameObject>(p))
                 .Where(p => p != null)
                 .OrderBy(p => p.name)
