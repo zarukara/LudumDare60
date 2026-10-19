@@ -24,8 +24,9 @@ namespace ScareSystem
     /// Seen in the open, a light left on, a slip on the bar or running down into her: a screamer, and the tape
     /// rewinds (<see cref="TapeRewind"/>) to the landing <see cref="rewindFloors"/> floors up, never above the start
     /// floor. The <see cref="chaseFloor"/> has no cart: there she comes down from above, the way the player came, and
-    /// chases them all the way down a stairwell that goes on longer than it should (StairsHunt.Chase.cs). Below the
-    /// 1st floor the run ends (<see cref="RoundManager.ExitReached"/>).
+    /// chases them all the way down a stairwell that goes on longer than it should, and back up to the door out
+    /// (StairsHunt.Chase.cs), where the run ends (<see cref="RoundManager.ExitReached"/>). Once she has gone past a
+    /// floor, the way back up from it is shut (<see cref="Stairwell.ShutWaysUp"/>): the only way is on down.
     /// </summary>
     public partial class StairsHunt : MonoBehaviour
     {
@@ -43,6 +44,8 @@ namespace ScareSystem
             Waiting,
             Passing,
             Chasing,
+            Fleeing,
+            Escaped,
             Caught,
             Done,
         }
@@ -90,8 +93,10 @@ namespace ScareSystem
         [Header("Chase")]
         [Tooltip("This floor has no cart: she comes down at the player from above and chases them down to the way out.")]
         public int chaseFloor = 4;
-        [Tooltip("The numbers on the landings the player runs past in the chase: the way down gets longer and longer.")]
-        public int[] chaseLandings = { 3, 2, 2, 1, 1, 1 };
+        [Tooltip("Landings the player runs down past before she breaks out of a door below them.")]
+        public int descentLandings = 4;
+        [Tooltip("Landings the player then runs back up, to the door out.")]
+        public int climbLandings = 4;
         [Tooltip("Gap she keeps behind a running player, metres along their track: when the chase begins, at its end.")]
         public Vector2 chaseGap = new Vector2(4.5f, 1.8f);
         [Tooltip("Her slowest pace, m/s: when the chase begins (below walking), at its end (between walking and running).")]
@@ -174,6 +179,7 @@ namespace ScareSystem
             Floor = startFloor;
             cutsceneDone = false;
             well.RemoveCover(chaseFloor);
+            well.OpenWaysUp();
             if (tape != null) tape.Begin();
         }
 
@@ -191,8 +197,10 @@ namespace ScareSystem
             if (babaika != null) Destroy(babaika.gameObject);
             babaika = null;
             VhsEffect.Rewinding = false;
+            escape = Escape.None;
             if (tape != null) tape.Stop();
             if (well != null) well.ResetNumbers();
+            if (well != null) well.OpenWaysUp();
             if (view != null && normalFov > 0f) view.fieldOfView = normalFov;
             if (hide != null) hide.allowed = true;
             if (locked) Lock(false);
@@ -201,12 +209,19 @@ namespace ScareSystem
         void Update()
         {
             Advise();
+            if (State == Phase.Escaped && player != null && AtTheWayOut(player.transform.position))
+            {
+                State = Phase.Done;
+                round.ReachExit(); // through the glass doors: the end
+                return;
+            }
             if (well == null || player == null || (State != Phase.Calm && State != Phase.Waiting)) return;
             // The landing the player stands on; one further down than expected counts too, so nobody runs past her.
             var feet = player.transform.position;
             int landing = Mathf.RoundToInt(well.Level(feet));
             if (landing < 1 || landing > Floor || !well.OnLanding(landing, feet)) return;
             Floor = landing;
+            well.ShutWaysUp(Floor); // no going back up after her: on down
             if (tape != null) tape.Mark(Floor);
             if (!cutsceneDone && Floor == startFloor) StartCoroutine(Cutscene());
             else if (Floor == chaseFloor) StartCoroutine(Descent());
@@ -222,7 +237,8 @@ namespace ScareSystem
             hints.Clear();
             if (Time.time < hintUntil && hintKey != null) hints.Add(hintKey);
             if (State != Phase.Passing || babaika == null || !babaika.gameObject.activeSelf || view == null) return;
-            if (!passedStare && (hide == null || !hide.Hidden) && !hints.Contains("hint.hideNow")) hints.Add("hint.hideNow");
+            string hideHint = HideHint(Floor);
+            if (!passedStare && (hide == null || !hide.Hidden) && !hints.Contains(hideHint)) hints.Add(hideHint);
             bool lit = flashlight != null && flashlight.IsOn;
             if (lit && Vector3.Distance(babaika.transform.position, view.transform.position) < lightDistance + 3f) hints.Add("hint.lightOff");
         }
@@ -271,7 +287,7 @@ namespace ScareSystem
             view.fieldOfView = normalFov;
             Lock(false);
             if (hide != null) hide.allowed = true;
-            Hint("hint.hideNow", 4f);
+            Hint(HideHint(startFloor), 4f);
             // Time to get behind the cart: she hangs there watching for a moment before she comes on.
             graceUntil = Time.time + 4f;
             for (float t = 0f; t < 1f; t += Time.deltaTime)
@@ -319,7 +335,7 @@ namespace ScareSystem
             cutsceneDone = true;
             RaiseAlarm();
             Debug.Log($"[StairsHunt] She comes past floor {floor}");
-            var route = well.Route(floor, out int stare);
+            var route = well.Route(floor, out int stare, out bool peeks);
             float depth = Depth(floor);
             if (fresh || babaika == null) Spawn(route[from], route[from + 1]);
             babaika.walkSpeed = Mathf.Lerp(crawlSpeed.x, crawlSpeed.y, depth);
@@ -334,14 +350,23 @@ namespace ScareSystem
                     yield return null;
                 }
 
-            if (!Crawl(route, from + 1, stare)) yield break;
-            while (babaika.IsMoving)
+            // To the point over the cover; at a wardrobe she lets go of the ceiling and comes down to its gap.
+            for (int leg = 0; leg < 2; leg++)
             {
-                if (!Watch(floor, false)) yield break;
-                yield return null;
+                if (leg == 1)
+                {
+                    if (!peeks) break;
+                    babaika.bodyUp = Vector3.up;
+                }
+                if (!Crawl(route, leg == 0 ? from + 1 : stare, peeks && leg == 0 ? stare - 1 : stare)) yield break;
+                while (babaika.IsMoving)
+                {
+                    if (!Watch(floor, false)) yield break;
+                    yield return null;
+                }
             }
 
-            if (forceStare || Random.value < Mathf.Lerp(stareChance.x, stareChance.y, depth))
+            if (peeks || forceStare || Random.value < Mathf.Lerp(stareChance.x, stareChance.y, depth))
             {
                 babaika.Stand();
                 float seconds = forceStare ? 2.2f : Mathf.Lerp(stareTime.x, stareTime.y, depth) + Random.Range(0f, 0.8f);
@@ -355,6 +380,7 @@ namespace ScareSystem
             }
 
             passedStare = true;
+            babaika.bodyUp = Vector3.down; // back up onto the ceiling
             Crawl(route, stare + 1, route.Length - 1);
             while (babaika.IsMoving)
             {
@@ -498,9 +524,10 @@ namespace ScareSystem
             if (hide != null) hide.Release();
             well.ResetNumbers(); // the stairs are themselves again on the way back
 
-            // The tape runs back to the landing a few floors up.
-            int target = Mathf.Min(Floor + rewindFloors, startFloor);
-            Debug.Log($"[StairsHunt] Caught on floor {Floor}, rewinding to floor {target}");
+            // The tape runs back: a few floors up, or in the escape to where this part of it began.
+            var stage = escape;
+            int target = stage == Escape.Down ? chaseFloor : stage == Escape.Up ? BurstMark : Mathf.Min(Floor + rewindFloors, startFloor);
+            Debug.Log($"[StairsHunt] Caught on floor {Floor} ({stage}), rewinding to {target}");
             rewindLoop = LoopOn(SoundRewind, gameObject, false, 1f);
             if (ambience != null) ambience.Duck(0.15f);
             if (tape != null && tape.HasMark(target))
@@ -512,19 +539,26 @@ namespace ScareSystem
                 // Never been there on this tape (jumped in for a test): just the rewind look, then there.
                 VhsEffect.Rewinding = true;
                 yield return new WaitForSeconds(2f);
-                MovePlayer(well.Arrival(target));
+                MovePlayer(stage == Escape.Up ? BurstLanding() : well.Arrival(stage == Escape.Down ? chaseFloor : target));
                 VhsEffect.Rewinding = false;
             }
             StopSound(ref rewindLoop);
             if (ambience != null) ambience.Duck(0.35f);
 
-            Floor = target;
             Lock(false);
             if (hide != null) hide.allowed = true;
             graceUntil = Time.time + rewindGrace; // a moment to find their feet before she can have them again
             lightTime = 0f;
-            State = Phase.Waiting;
             Debug.Log($"[StairsHunt] Rewound, the player is at level {well.Level(player.transform.position):F2}");
+            if (stage == Escape.Up)
+            {
+                yield return Burst();
+                yield break;
+            }
+            escape = Escape.None;
+            Floor = stage == Escape.Down ? chaseFloor : target;
+            well.ShutWaysUp(Floor);
+            State = Phase.Waiting;
         }
 
         // ------------------------------------------------------------------ helpers
@@ -532,8 +566,8 @@ namespace ScareSystem
         /// <summary>0 on the start floor .. 1 on the 1st: she gets quicker and the bar harder on the way down.</summary>
         float Depth(int floor) => Mathf.InverseLerp(startFloor, 1f, floor);
 
-        /// <summary>Puts her at a point hanging from the ceiling, facing along the way to the next one.</summary>
-        void Spawn(Vector3 at, Vector3 toward)
+        /// <summary>Puts her at a point hanging from the ceiling (or on her feet), facing along the way to the next one.</summary>
+        void Spawn(Vector3 at, Vector3 toward, bool upright = false)
         {
             if (babaika == null)
             {
@@ -544,10 +578,10 @@ namespace ScareSystem
                 if (legs != null && claws != null && claws.clips.Length > 0) legs.clawClips = claws.clips;
             }
             babaika.gameObject.SetActive(true);
-            babaika.bodyUp = Vector3.down;
+            babaika.bodyUp = upright ? Vector3.up : Vector3.down;
             Vector3 facing = Vector3.ProjectOnPlane(toward - at, Vector3.up);
             if (facing.sqrMagnitude < 1e-4f) facing = Vector3.forward;
-            babaika.Teleport(at, Quaternion.LookRotation(facing.normalized, Vector3.down));
+            babaika.Teleport(at, Quaternion.LookRotation(facing.normalized, babaika.bodyUp));
         }
 
         /// <summary>She is out of sight: switched off until the next floor.</summary>
@@ -569,13 +603,13 @@ namespace ScareSystem
             player.canLook = !on;
         }
 
-        void MovePlayer(Pose pose)
+        void MovePlayer(Pose pose, bool levelView = true)
         {
             var body = player.GetComponent<CharacterController>();
             if (body != null) body.enabled = false;
             player.transform.SetPositionAndRotation(pose.position, pose.rotation);
             if (body != null) body.enabled = true;
-            player.Pitch = 0f;
+            if (levelView) player.Pitch = 0f;
         }
 
         /// <summary>The lamps go to flashing red and the siren starts wailing, until the stairs are left behind.</summary>
@@ -585,6 +619,13 @@ namespace ScareSystem
             if (siren != null) return;
             siren = LoopOn(SoundAlarm, gameObject, false, sirenVolume);
             if (siren != null) sirenLevel = siren.volume;
+        }
+
+        /// <summary>"Hide behind the cart / the nightstand, in the wardrobe!" for what stands on that floor.</summary>
+        string HideHint(int floor)
+        {
+            var cover = well != null ? well.Cover(floor) : null;
+            return cover != null ? cover.hintKey : "hint.hideNow";
         }
 
         void Hint(string key, float seconds)
@@ -636,6 +677,32 @@ namespace ScareSystem
             if (floor <= startFloor) RaiseAlarm();
             Floor = Mathf.Min(floor, startFloor);
             MovePlayer(well.Arrival(floor));
+        }
+
+        /// <summary>Play Mode, on the stairs: down on the half landing over the 1st floor, as the door below bursts.</summary>
+        [ContextMenu("Debug: Jump To The Burst")]
+        void DebugBurst() => DebugEscape(false);
+
+        /// <summary>Play Mode, on the stairs: up on the landing with the door out, with her coming up the last flight.</summary>
+        [ContextMenu("Debug: Jump To The Exit")]
+        void DebugExit() => DebugEscape(true);
+
+        void DebugEscape(bool atExit)
+        {
+            if (!Application.isPlaying || well == null) return;
+            Stop();
+            cutsceneDone = true;
+            Floor = chaseFloor;
+            RaiseAlarm();
+            if (tape != null) tape.Begin();
+            if (atExit)
+            {
+                MovePlayer(ExitLanding());
+                StartCoroutine(BackToExit());
+                return;
+            }
+            MovePlayer(BurstLanding());
+            StartCoroutine(Burst());
         }
     }
 }

@@ -71,7 +71,7 @@ namespace ScareSystem.EditorTools
                 slot.fallback = Array.Find(Fallbacks, f => f.slot == name).fallback;
             }
             // Slots the chase no longer plays go, unless sounds were already chosen for them.
-            bank.slots.RemoveAll(s => !Array.Exists(Slots, x => x.name == s.name) && (s.clips == null || s.clips.Length == 0));
+            bank.slots.RemoveAll(s => !Array.Exists(Slots, x => x.name == s.name) && (s.clips == null || !Array.Exists(s.clips, c => c != null)));
             EditorUtility.SetDirty(bank);
             AssetDatabase.SaveAssetIfDirty(bank);
             WriteReadme();

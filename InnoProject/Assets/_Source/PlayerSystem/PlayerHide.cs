@@ -92,7 +92,8 @@ namespace PlayerSystem
             Vector3 from = transform.position, to = spot.seat != null ? spot.seat.position : from;
             to.y = from.y;
             float yawFrom = transform.eulerAngles.y, yawTo = spot.seat != null ? spot.seat.eulerAngles.y : yawFrom, pitchFrom = walker.Pitch;
-            yield return Glide(from, to, yawFrom, yawTo, pitchFrom, -5f, 0f, spot.eyeDrop); // eyes just over the edge
+            // Eyes just over the edge, or straight out through a closet's gap.
+            yield return Glide(from, to, yawFrom, yawTo, pitchFrom, spot.Enclosed ? 0f : -5f, 0f, spot.eyeDrop, spot);
             walker.canLook = true;
             Hidden = true;
             Moving = false;
@@ -105,24 +106,27 @@ namespace PlayerSystem
             Vector3 from = transform.position, to = Spot != null && Spot.exit != null ? Spot.exit.position : from;
             to.y = from.y;
             float yaw = transform.eulerAngles.y;
-            yield return Glide(from, to, yaw, yaw, walker.Pitch, walker.Pitch, walker.headDrop, 0f);
+            yield return Glide(from, to, yaw, yaw, walker.Pitch, walker.Pitch, walker.headDrop, 0f, Spot);
             Spot = null;
             walker.canMove = true;
             Moving = false;
         }
 
-        IEnumerator Glide(Vector3 from, Vector3 to, float yawFrom, float yawTo, float pitchFrom, float pitchTo, float dropFrom, float dropTo)
+        /// <summary>Moves the player in or out; a closet's doors swing open on the way and shut behind them.</summary>
+        IEnumerator Glide(Vector3 from, Vector3 to, float yawFrom, float yawTo, float pitchFrom, float pitchTo, float dropFrom, float dropTo, HidingSpot spot)
         {
             body.enabled = false;
             for (float t = 0f; t < moveTime; t += Time.deltaTime)
             {
                 float u = t / moveTime;
+                if (spot != null) spot.SetOpen(Mathf.Sin(u * Mathf.PI));
                 u = u * u * (3f - 2f * u);
                 transform.SetPositionAndRotation(Vector3.Lerp(from, to, u), Quaternion.Euler(0f, Mathf.LerpAngle(yawFrom, yawTo, u), 0f));
                 walker.Pitch = Mathf.Lerp(pitchFrom, pitchTo, u);
                 walker.headDrop = Mathf.Lerp(dropFrom, dropTo, u);
                 yield return null;
             }
+            if (spot != null) spot.SetOpen(0f);
             transform.SetPositionAndRotation(to, Quaternion.Euler(0f, yawTo, 0f));
             walker.Pitch = pitchTo;
             walker.headDrop = dropTo;

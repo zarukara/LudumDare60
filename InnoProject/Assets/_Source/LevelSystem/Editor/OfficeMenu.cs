@@ -43,6 +43,7 @@ namespace LevelSystem.EditorTools
             var palette = BuildPalette();
             var prefab = BuildRoomPrefab(palette);
             var library = BuildAnomalyPrefabs(palette);
+            PropAnomalies.Build(palette);
             BuildScene(palette, prefab, library, false);
             BuildMenuScene(false);
         }
@@ -603,11 +604,14 @@ namespace LevelSystem.EditorTools
             return library;
         }
 
+        internal static readonly Color HighlightColor = new Color(1f, 0.13f, 0.08f);
+        internal const float HighlightIntensity = 4.5f;
+
         /// <summary>
-        /// A warm spot shining down on the object from just under the ceiling, so it stands out in the dark office
+        /// A red spot shining down on the object from just under the ceiling, so it stands out in the dark office
         /// (a spot, not a point light: no glowing patch on the ceiling to give the place away).
         /// </summary>
-        static void AddHighlight(Transform model)
+        internal static void AddHighlight(Transform model)
         {
             var renderers = model.GetComponentsInChildren<Renderer>();
             if (renderers.Length == 0) return;
@@ -624,8 +628,8 @@ namespace LevelSystem.EditorTools
             light.spotAngle = Mathf.Clamp(2f * Mathf.Atan2(Mathf.Max(bounds.extents.x, bounds.extents.z) + 0.35f, height) * Mathf.Rad2Deg, 30f, 120f);
             light.innerSpotAngle = light.spotAngle * 0.5f;
             light.range = height + 1f;
-            light.intensity = 2.6f;
-            light.color = new Color(1f, 0.82f, 0.6f);
+            light.intensity = HighlightIntensity;
+            light.color = HighlightColor;
             light.shadows = LightShadows.None;
         }
 

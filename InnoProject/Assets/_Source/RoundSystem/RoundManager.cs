@@ -234,14 +234,24 @@ namespace RoundSystem
             }
             else if (IsFinishStage && CurrentStage.FinishZone.Contains(pos))
             {
-                exitReached = true;
-                SetPlayerControl(false);
-                Cursor.lockState = CursorLockMode.None;
-                Cursor.visible = true;
-                ExitReached?.Invoke();
+                ReachExit();
             }
 
             lastPosition = player.position - transform.position;
+        }
+
+        /// <summary>
+        /// The run is over: the player is out (the finish zone, or a scripted ending calls this). Takes control away,
+        /// frees the cursor and fires <see cref="ExitReached"/> once.
+        /// </summary>
+        public void ReachExit()
+        {
+            if (exitReached) return;
+            exitReached = true;
+            SetPlayerControl(false);
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+            ExitReached?.Invoke();
         }
 
         /// <summary>Retreat: one level down, a fresh normal stage.</summary>
