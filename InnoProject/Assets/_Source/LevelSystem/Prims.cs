@@ -107,14 +107,14 @@ namespace LevelSystem
         }
 
         public static TextMesh Text(string name, Transform parent, Vector3 position, Vector3 facing, string text, float lineHeight,
-            Color color, Material mat, TextAnchor anchor = TextAnchor.MiddleCenter)
+            Color color, Material mat, TextAnchor anchor = TextAnchor.MiddleCenter, Font font = null)
         {
             var go = new GameObject(name);
             go.transform.SetParent(parent, false);
             go.transform.localPosition = position;
             go.transform.localRotation = Quaternion.LookRotation(-facing, Vector3.up);
             var tm = go.AddComponent<TextMesh>();
-            tm.font = FontBinder.DefaultFont;
+            tm.font = font != null ? font : FontBinder.DefaultFont;
             tm.fontSize = 64;
             tm.characterSize = lineHeight / 6.4f;
             tm.anchor = anchor;

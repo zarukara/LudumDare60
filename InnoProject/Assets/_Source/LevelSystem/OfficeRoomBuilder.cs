@@ -435,10 +435,11 @@ namespace LevelSystem
             Prims.Box("Eraser", g, new Vector3(0.28f, 0.86f, 0.05f), new Vector3(0.13f, 0.035f, 0.05f), p.darkPlastic, false);
 
             var notes = Prims.Group("Notes", g);
-            Localized(Prims.Text("Title", notes, new Vector3(0f, 1.8f, 0.0235f), Vector3.forward, "", 0.11f, Marker, p.text), "board.title");
+            Localized(Prims.Text("Title", notes, new Vector3(0f, 1.8f, 0.0235f), Vector3.forward, "", 0.11f, Marker, p.text,
+                font: p.whiteboardFont), "board.title");
             for (int i = 0; i < 5; i++)
                 Localized(Prims.Text("Line", notes, new Vector3(1.08f, 1.64f - i * 0.15f, 0.0235f), Vector3.forward, "", 0.08f, Marker, p.text,
-                    TextAnchor.MiddleLeft), $"board.line{i + 1}");
+                    TextAnchor.MiddleLeft, p.whiteboardFont), $"board.line{i + 1}");
         }
 
         static void Clock(Transform parent, OfficePalette p)

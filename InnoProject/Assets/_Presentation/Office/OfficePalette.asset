@@ -43,6 +43,7 @@ MonoBehaviour:
   signPanel: {fileID: 2100000, guid: 9319656cc7a0b904bb31f2089c8cc9e9, type: 2}
   exitSign: {fileID: 2100000, guid: b24bd8eee721720449e36d64b6ded54f, type: 2}
   text: {fileID: 2100000, guid: 93ed6522bdb0edc47a61617a373e6d73, type: 2}
+  whiteboardFont: {fileID: 12800000, guid: ff242da185f1b0343984c816189b86dd, type: 3}
   leaves: {fileID: 2100000, guid: 357c8d8fbec17694b88e02f13dc65889, type: 2}
   pot: {fileID: 2100000, guid: a58f81f05d98f4d41909710c90627daa, type: 2}
   soil: {fileID: 2100000, guid: 13652e95801136146bca422ad6660b3e, type: 2}
